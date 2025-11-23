@@ -75,12 +75,24 @@ class SFM:
         # recoverPose returns inliers too; we pass K and pixel points
         _, R, t, pose_mask = cv.recoverPose(E, pts1_inliers, pts2_inliers, K)
 
+        #TODO: CHECK THIS
         # normalize translation (direction only)
         t = t / (np.linalg.norm(t) + 1e-9)
 
         return R, t, pts1_inliers, pts2_inliers
 
     def triangulate(self, pose1, pose2, pts1, pts2):
+    """
+    Triangulates pts1 and pts2 in relation to their poses given that poses are
+    in world frame.
+    Args:
+      pose1: 4x4 camera pose matrix of pose1 in world frame
+      pose2: 4x4 camera pose matrix of pose2 in world frame
+      pts1: a list of 2d points that has index matched correspondences in pts2
+      pts2: a list of 2d points that has index matched correspondences in pts1
+    Return:
+      good_points: corresponded points mapped to 3d space
+    """
         if pts1 is None or pts2 is None or pts1.shape[0] == 0:
             return
 
@@ -95,6 +107,7 @@ class SFM:
             u1, v1 = p1
             u2, v2 = p2
 
+            # magic linalg that simplifies PX[2] into the equation
             A = np.zeros((4, 4))
             A[0] = u1 * P1[2] - P1[0]
             A[1] = v1 * P1[2] - P1[1]
@@ -112,13 +125,10 @@ class SFM:
         z1 = (pose1[:3, :3] @ pts3d_cartesian.T + pose1[:3, 3:4])[2, :]
         z2 = (pose2[:3, :3] @ pts3d_cartesian.T + pose2[:3, 3:4])[2, :]
 
-        mask = (z1 > 0) & (z2 > 0) & (z1 < 100) & (z2 < 100)
 
         good_points = pts3d[mask]
 
-        if good_points.shape[0] > 0:
-            # store homogeneous points
-            self.mapp.points.append(good_points)
+        return good_points
 
     def fast_pose_inverse(self, pose):
         """
