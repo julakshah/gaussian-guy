@@ -51,3 +51,8 @@ qtcreator-*
 CATKIN_IGNORE
 
 .DS_Store
+
+# Exclude local website modules
+.next/
+node_modules/
+
