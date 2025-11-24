@@ -33,7 +33,7 @@ On the computational side, we have the beginning of our pipeline --- a quick scr
 
 As we're considering using a triangulated point cloud generated via visual odometry in informing our trajectory decisions when scanning the object, we have an initial draft of a simple visual odometry script implemented, using OpenCV's ORB keypoint detection and matching. 
 
-In parallel to this, we've been ensuring that we can stitch together existing algorithms for this pipeline to evnetually do our own processing at the end. For this purpose, we have COLMAP working and generating a sparse reconstruction, dense reconstruction, and Delaunay-triangulated mesh from a sequence of images. 
+In parallel to this, we've been ensuring that we can stitch together existing algorithms for this pipeline to evnetually do our own processing at the end. For this purpose, we have COLMAP working and generating a sparse reconstruction, dense reconstruction, and Delaunay-triangulated mesh from a sequence of images we provide. 
 
 Here's a dense reconstruction of a test dataset using COLMAP:
 ![Dense Reconstruction via COLMAP](/images/colmap-test-dense.png)
