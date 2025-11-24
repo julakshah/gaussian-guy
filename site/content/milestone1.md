@@ -21,9 +21,11 @@ Stretch goals for this include:
 
 ## Status
 
-We've successfully interfaced with the robot arm we're planning to use, controlling it via a script. 
+We've successfully interfaced with the robot arm we're planning to use, controlling it via a script and watching it move. 
 
-On the reconstruction side, we have already tested COLMAP on a dataset of images to examine its reconstruction, and are currently working on the environment setup for gsplat and triangle_splatting in parallel to determine which we will go forward with using. We're running into a few issues installing the necessary versions of packages, especially when CUDA is involved, but are working through those. 
+On the reconstruction side, we have already tested COLMAP on a dataset of images to examine its reconstruction and eventually pass the reconstruction to gsplat, and are currently working on finishing the environment setup for gsplat and triangle_splatting in parallel to determine which we will go forward with using. We're running into a few issues installing the necessary versions of packages, especially when CUDA is involved, but have been working through those.
+
+We have an initial working environment for gsplat. We're using Python 3.10, CUDA 11.8, and the corresponding PyTorch version. Note that installing [gsplat](https://github.com/nerfstudio-project/gsplat) allows for either JIT compiling of the CUDA code on the first run, building from source, or installing a prebuilt wheel for specific package versions. We found that the JIT compilation would fail on newer PyTorch versions due to a function signature calling, and pivoted to the precompiled wheel, which appears to work more reliably. Also, the gsplat documentation recommends using pip to install the additional requirements for the example via the `examples/requirements.txt` file, but we found we had to additionally use the `--no-build-isolation` flag in order for some of the built packages to recognize PyTorch.
 
 ## Project Components
 
@@ -33,7 +35,7 @@ On the computational side, we have the beginning of our pipeline --- a quick scr
 
 As we're considering using a triangulated point cloud generated via visual odometry in informing our trajectory decisions when scanning the object, we have an initial draft of a simple visual odometry script implemented, using OpenCV's ORB keypoint detection and matching. 
 
-In parallel to this, we've been ensuring that we can stitch together existing algorithms for this pipeline to evnetually do our own processing at the end. For this purpose, we have COLMAP working and generating a sparse reconstruction, dense reconstruction, and Delaunay-triangulated mesh from a sequence of images we provide. 
+In parallel to this, we've been ensuring that we can stitch together existing algorithms for this pipeline to evnetually do our own processing at the end. For this purpose, we have COLMAP working and generating a sparse reconstruction, dense reconstruction, and Delaunay-triangulated mesh from a sequence of images we provide. We also have Gaussian Splatting working using gsplat
 
 Here's a dense reconstruction of a test dataset using COLMAP:
 ![Dense Reconstruction via COLMAP](/images/colmap-test-dense.png)
@@ -41,16 +43,24 @@ Here's a dense reconstruction of a test dataset using COLMAP:
 We also were able to use COLMAP in generating a Delaunay-triangulated mesh from this reconstruction:
 ![Mesh via COLMAP](/images/colmap-test-mesh.png)
 
-While this is visually nice to see, our end goal for the project is to have a visual reconstruction based off of Gaussian splatting or triangle splatting, which are somewhat harder to set up. However, COLMAP excels at initially generating a sparse reconstruction in relatively quick time, which we can try to use in place of or along side a home-baked SfM approach if it proves more efficient. 
+While this is visually nice to see, our end goal for the project is to have a visual reconstruction based off of Gaussian splatting or triangle splatting, which are somewhat harder to set up and take much longer to compute. However, COLMAP excels at initially generating a sparse reconstruction in relatively quick time, which we can try to use in place of or along side a home-baked SfM approach if it proves more efficient, and the sparse reconstruction is also used as the input to the Gaussian Splatting program.
+
+![20 minutes of Gaussian splatting on a laptop GPU](/images/gsplat_20mins_test.png)
+
+While Gaussian splatting takes multiple hours on a set of a few hundred images without playing with downscaling options and such, we are able to view a work-in-progress scene created by gsplat, running for only 20 minutes on our sparse reconstruction from COLMAP. The image above depicts that, taken at approximately 2000 steps, in roughly 20 minutes of generation. 
 
 ## Potential Risks
 
 Our most significant risk was being unable to connect to and interface with the arm, but we've successfully averted this.
 
-Our next greatest risk is in setting up the Gaussian splatting code, as we've run into a number of dependency and version while setting up the environment. While we're confident we can eventually get it working --- one person on our team already has some experience with Gaussian splatting --- the risk is more in the fact that before we run gsplat, we can't easily develop the processing algorithms that will follow for measuring error or isolating objects. This processing dependent on knowing the shape and format in which the list of Gaussians is stored after splatting concludes, and while we can look at the documentation for examples on what this looks like in code, having the output of gsplat on a test dataset in front of us would make testing our later processing code much easier.
+Our next greatest risk is in setting up the Gaussian splatting code, as we've run into a number of dependency and version while setting up the environment. While we appear to have gotten it working as of now, we still risk the fact that doing processing on the result of Gaussian splatting may be more difficult than we anticipate. However, the fact that we now have Gaussian splatting running makes this easier --- as the processing is dependent on knowing the shape and format in which the list of Gaussians is stored after splatting concludes, having the output of gsplat on a test dataset in front of us is going make testing our later processing code much easier.
+
+Other potential risks include ensuring the computational setups scale to each of our computers rather than single computers in isolation, as well as potentially struggling with how to view/visualize our scene after we process it and in doing so change the reconstruction.
 
 ## Goals for Milestone 2
 
 By Milestone 2, we aim to have Gaussian splatting (or Triangle Splatting, if we decide to pivot to that) fully working on our machines, and to be able to run these on any video of our choosing. We'll also have a script that automates this process such that the only necessary input is the path to the chosen video, and we'll have at least a preliminary post-splatting script that describes some features of the output --- for instance, number of Gaussians, or the results of a clustering algorithm like DBSCAN on their positions --- as, at minimum, a stand-in for the sort of processing we intend to do on the output, which would operate on each Gaussian primitive as if it were a point cloud point. This leaves the time between Milestone 2 and the final deliverable date for finishing the final processing algorithms and helping our point cloud or sparse reconstruction interface with the arm and path planning code.
+
+This will also include a bit of sharing progress and ensuring each member of the team knows how to run the relevant code --- as the computational setup is nontrivial for both ends of this project, we'll need to make sure mismatched CUDA versions or compilation errors aren't getting in the way of progress.
 
 Regarding the robot arm, we intend to be able to describe a specific trajectory --- for instance, a circle around the center of the viewing area --- and have the arm execute it, as well as look into potential avenues for optimizing our trajectory generation against some constraints or to maximize information gained from viewing our object. 
