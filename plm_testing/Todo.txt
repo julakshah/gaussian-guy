@@ -1,0 +1,3 @@
+// Todo list for tasks
+
+1. Generate  curve and then discretize it.
