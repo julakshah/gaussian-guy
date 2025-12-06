@@ -94,6 +94,26 @@ if __name__ == "__main__":
         obs = (random.uniform(-20,20), random.uniform(-20,20), random.uniform(-20,20))
         root.insert_obstacle(obs)
 
+    #### LLM
+    # Wall 1: A vertical barrier at X=0 (Blocks the direct center)
+    # Spans Y: -10 to 10, Z: -10 to 10
+    for y in range(-10, 11):
+        for z in range(-10, 11):
+            root.insert_obstacle((0, y, z))
+
+    # Wall 2: A floor/ceiling plate at Z=-5 (Forces the robot to go up)
+    # Spans X: -10 to 10, Y: -10 to 10
+    for x in range(-10, 11):
+        for y in range(-10, 11):
+            root.insert_obstacle((x, y, -5))
+
+    # Wall 3: A side barrier at Y=8 (Narrowing the path near the goal)
+    # Spans X: 5 to 15, Z: 5 to 15
+    for x in range(5, 16):
+        for z in range(5, 16):
+            root.insert_obstacle((x, 8, z))
+    ####
+
     start_pos = (-15, -15, -15)
     goal_pos = (15, 15, 15)
 
