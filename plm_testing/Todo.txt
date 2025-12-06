@@ -1,3 +1,11 @@
 // Todo list for tasks
 
-1. Generate  curve and then discretize it.
+
+MILESTONE 2:
+1. Raise to overview height
+2. Identify object position
+3. Generate coordinates of circle around object
+3. Use A* to go to closest point in circle
+4. Go around in circle
+5. Return to overview/sleep
+

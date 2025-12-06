@@ -1,5 +1,9 @@
 """Mess around with math and code to figure out Octrees"""
 
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+import random
+
 class OctreeNode:
     """
     Octree
@@ -104,19 +108,56 @@ class OctreeNode:
                 z_index = 1
             else:
                 z_index = 0
-            
-            # child_positions = [] # positives are right, up, front
-            # for xi in (-1, 1):
-            #     for yi in (-1, 1):
-            #         for zi in (-1, 1):
-            #             child_positions.append((xi, yi, zi))
-
 
             child_index = x_index * 4 + y_index * 2 + z_index
             current_node = current_node.children[child_index]
 
         current_node.status = "occupied"
         return True
+    
+    def find_leaf(self, position):
+        """
+        Finds the leaf node containing the given position.
+        Returns None if out of bounds.
+        """
+        current_node = self
+        
+        # Check if in bounds
+        if (abs(position[0] - current_node.position[0]) > current_node.r or
+            abs(position[1] - current_node.position[1]) > current_node.r or
+            abs(position[2] - current_node.position[2]) > current_node.r):
+            return None
+
+        # Go down each child node
+        while current_node.children[0] is not None:
+            
+            # Check child nodes
+            relative_pos = (
+                position[0] - current_node.position[0],
+                position[1] - current_node.position[1],
+                position[2] - current_node.position[2],
+            )
+
+            if relative_pos[0] > 0:
+                x_index = 1
+            else:
+                x_index = 0
+            if relative_pos[1] > 0:
+                y_index = 1
+            else:
+                y_index = 0
+            if relative_pos[2] > 0:
+                z_index = 1
+            else:
+                z_index = 0
+
+            child_index = x_index * 4 + y_index * 2 + z_index
+                        
+            # Move down
+            current_node = current_node.children[child_index]
+            
+        # Leaf node exit
+        return current_node
 
     def update_parents(self):
         """Update parent nodes to prune unnecessary children"""
@@ -124,3 +165,59 @@ class OctreeNode:
         while current_node.parent is not None:
             current_node.parent.prune()
             current_node = current_node.parent
+
+
+    def draw_cube(self, ax, facecolor='red', edgecolor='black', alpha=1.0): ####
+        """Draws a cube at this node."""
+        x, y, z = self.position
+        r = self.r
+        corners = [
+            (x-r, y-r, z-r), (x-r, y-r, z+r), (x-r, y+r, z-r), (x-r, y+r, z+r),
+            (x+r, y-r, z-r), (x+r, y-r, z+r), (x+r, y+r, z-r), (x+r, y+r, z+r),
+        ]
+        faces = [
+            [corners[i] for i in [0,1,3,2]],
+            [corners[i] for i in [4,5,7,6]],
+            [corners[i] for i in [0,1,5,4]],
+            [corners[i] for i in [2,3,7,6]],
+            [corners[i] for i in [0,2,6,4]],
+            [corners[i] for i in [1,3,7,5]],
+        ]
+        ax.add_collection3d(Poly3DCollection(faces, facecolors=facecolor, edgecolors=edgecolor, linewidths=0.5, alpha=alpha))
+
+    def draw(self, ax): ####
+        """Recursively draw the tree:
+        - Occupied nodes: solid red
+        - Internal nodes: transparent wireframe
+        """
+        if self.children[0] is None:
+            if self.status == 'occupied':
+                self.draw_cube(ax, facecolor='red', edgecolor='black', alpha=1.0)
+        else:
+            # Draw internal node wireframe first
+            self.draw_cube(ax, facecolor='white', edgecolor='gray', alpha=0.1)
+            for child in self.children:
+                child.draw(ax)
+
+# Example usage
+if __name__ == "__main__":
+    root = OctreeNode(position=(0,0,0), r=20)
+
+    # Insert some obstacles
+    obstacles = []
+    for i in range(10):
+        obstacle = (random.uniform(-20,20), random.uniform(-20,20), random.uniform(-20,20))
+        obstacles.append(obstacle)
+
+    for obs in obstacles:
+        root.insert_obstacle(obs)
+
+    # Plot
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    root.draw(ax)
+    ax.set_xlim(-25,25)
+    ax.set_ylim(-25,25)
+    ax.set_zlim(-25,25)
+    ax.set_box_aspect([1,1,1])
+    plt.show()
