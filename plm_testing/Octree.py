@@ -160,6 +160,20 @@ class OctreeNode:
         # Leaf node exit
         return current_node
 
+    def update_cell(self, pos, is_occupied):
+        """Set a single cell as occupied or empty"""
+        leaf = self.find_leaf(pos)
+        if leaf is None:
+            return
+
+        if is_occupied:
+            leaf.status = "occupied"
+        else:
+            leaf.status = "empty"
+
+        leaf.update_parents()
+
+
     def update_parents(self):
         """Update parent nodes to prune unnecessary children"""
         current_node = self
