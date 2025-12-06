@@ -75,7 +75,7 @@ class OctreeNode:
 
         # Check if already occupied
         if self.get_status() == 'occupied':
-            return
+            return True
 
         # Check if obstacle in node bounds
         if (abs(obstacle_pos[0] - self.position[0]) > self.r or
@@ -113,6 +113,7 @@ class OctreeNode:
             current_node = current_node.children[child_index]
 
         current_node.status = "occupied"
+        current_node.update_parents()
         return True
     
     def find_leaf(self, position):
@@ -166,6 +167,30 @@ class OctreeNode:
             current_node.parent.prune()
             current_node = current_node.parent
 
+    def get_neighbors(self, root):
+        """Get neighboring nodes"""
+        neighbors = set()
+
+        directions = [] # positives are right, up, front
+        for xi in (-1, 0, 1):
+            for yi in (-1, 0, 1):
+                for zi in (-1, 0, 1):
+                    if (xi, yi, zi) != (0, 0, 0):
+                        directions.append((xi, yi, zi))
+
+        for direction in directions:
+            epsilon = 1e-6
+
+            neighbor_pos = (
+                self.position[0] + direction[0] * (self.r + epsilon),
+                self.position[1] + direction[1] * (self.r + epsilon),
+                self.position[2] + direction[2] * (self.r + epsilon),
+            )
+            neighbor_node = root.find_leaf(neighbor_pos)
+            if neighbor_node:
+                neighbors.add(neighbor_node)
+
+        return list(neighbors)
 
     def draw_cube(self, ax, facecolor='red', edgecolor='black', alpha=1.0): ####
         """Draws a cube at this node."""
