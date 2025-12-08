@@ -6,7 +6,8 @@ import sys
 import cv2
 
 def extract_frames(path: str, modulo=1):
-    video_dir = os.path.join(os.getcwd(),path)
+    video_dir = os.path.join(os.getcwd(),"images_"+path)
+    os.makedirs(video_dir, exist_ok=True)
     cap = cv2.VideoCapture(path)
     if not cap.isOpened():
         print(f"Could not open {path}")
@@ -15,25 +16,25 @@ def extract_frames(path: str, modulo=1):
     count_written = 0
     frame_count = 0
     while True:
-        ret,frame = cap.get()
+        ret,frame = cap.read()
         if not ret:
-            print(f"Wrote {frame_count} frames")
+            print(f"Wrote {count_written} frames")
             return
         if frame_count % modulo != 0:
             frame_count += 1
-            return
+            continue
         
         frame_count += 1
-        cv2.imwrite(os.path.join(video_dir,f"{frame_count}"),frame)
+        cv2.imwrite(os.path.join(video_dir,f"{count_written}.png"),frame)
         count_written += 1
 
 if __name__ == "__main__":
     if len(sys.argv) < 2: 
         print("Must pass in a video as command line argument")
         sys.exit()
-    if len(sys.argv < 3):
+    if len(sys.argv) < 3:
         modulo = 1
     else:
         modulo = int(sys.argv[2])
-    print(f"Extracting one frame for every {modulo} frame of {sys.argv[1]}")
-    extract_frames(path=sys.argv[1],modulo=1)
+    print(f"Extracting one frame for every {modulo} frames of {sys.argv[1]}")
+    extract_frames(path=sys.argv[1],modulo=modulo)
