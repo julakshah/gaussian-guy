@@ -12,8 +12,7 @@ Our remaining work consists of finishing up the individual components, integrati
 We now have inverse kinematics working for our arm, such that we can provide an x,y,z coordinate, get the necessary robot joint angles, and execute that path on the physical arm. 
 
 
-We also ahve more of the arm's movement planning implemented. In essence, we want to capture more information about our object shape in fewer images, as this runs more quickly and is easier to process. To do this, we represent our object in space using an octree describing the occupancy of our shape, where each voxel is either empty, filled, or unknown. We've then implemented an A* algorithm to locate the nearest point that will add information (resolve more unknown voxels than a set threshold) and return a sequence of voxel coordinates to navigate to.
-
+We also have more of the arm's movement planning implemented. In essence, we want to capture more information about our object shape in fewer images, as this runs more quickly and is easier to process. To do this, we represent our object in space using an octree describing the occupancy of our shape, where each voxel is either empty, filled, or unknown. We've then implemented an A* algorithm to locate the nearest point that will add information (resolve more unknown voxels than a set threshold) and return a sequence of "goal" voxel coordinates to navigate to. The idea is to chain goal positions until all unknown voxels (not surrounded by collision) are identified. 
 
 The next step is defining an actual trajectory generation and simple obstacle avoidance algorithm --- given a sequence of voxel waypoints, ensure the next waypoint is valid (check for collisions between shape of robot arm, determined via forward kinematics from the inverse kinematics given end effector X,Y,Z) and navigate to it with a given timestamp. 
 
