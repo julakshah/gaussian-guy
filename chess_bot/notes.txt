@@ -1,0 +1,162 @@
+|----------------------------------------|
+   Running Python Files to Control Arm
+|----------------------------------------|
+
+
+STEP 1:
+run this in bridge_data_robot-main
+"""
+./generate_usb_config.sh
+
+USB_CONNECTOR_CHART=$(pwd)/usb_connector_chart.yml docker compose up --build robonet
+"""
+
+
+STEP 2:
+run this is another window
+"""
+docker compose exec -d robonet bash -lic "python3 /home/robonet/widowx_envs/widowx_envs/widowx_env_service.py --server"
+"""
+
+
+STEP 3:
+run this the first time
+"""
+mkdir -p $HOME/widowx_data
+sudo chown -R 1000:1002 $HOME/widowx_data
+"""
+
+and this every time
+"""
+docker compose exec robonet bash
+"""
+
+
+STEP 4:
+run test code with
+"""
+bash -lic "python3 /home/robonet/widowx_envs/widowx_envs/test.py"
+"""
+
+
+|----------------------------------------|
+   Inverse Kinematics & Moving the Arm
+|----------------------------------------|
+
+
+ModifiedKinSpace()
+  Computes final joint angles
+
+  Location:
+    widowx_controller.py
+
+  Where is it Used:
+    set_ee_pose_matrix_fast() within widowx_controller.py
+
+  Returns:
+    list of final thetas for each end effector
+      - [joint_1_angle, joint_2angle, ...]
+    Boolean for whether it succeeded 
+      - True is solution found
+
+  Arguments:
+    Slist - IDK - self.robot_des.Slist
+    M - IDK - self.robot_des.M
+    T - IDK - T_sd
+    thetalist0 - Guess for joint angles
+    eomg - IDK - 0.001
+    ev - IDK - 0.001
+    maxiterations=40
+
+
+set_ee_pose_matrix_fast()
+  get final joint angles using ModifiedKinSpace based on initial guesses
+  SPECIFICALLY FOR STEPPING (I believe)
+
+  Location:
+    widowx_controller.py
+
+  Where is it Used:
+    move_to_eep() within widowx_controller.py
+
+  Returns:
+    list of final thetas for each end effector
+      - [joint_1_angle, joint_2angle, ...]
+    Boolean for whether it succeeded 
+      - True is solution found
+
+
+set_ee_pose_matrix()
+  Generally need to understand
+  SPECIFICALLY FOR NON-STEPPING (I believe)
+
+  Location:
+    IDK
+
+  Where is it Used:
+    move_to_eep() within widowx_controller.py
+
+  Returns:
+    list of final thetas for each end effector
+      - [joint_1_angle, joint_2angle, ...]
+    Boolean for whether it succeeded 
+      - True is solution found
+
+  Arguments Sent:
+    target_pose
+    custom_guess=self.get_joint_angles()
+    moving_time=duration
+    accel_time=duration * 0.45
+    blocking=blocking
+    
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+command to run from outside docker:
+docker compose exec robonet bash -lic "python3 /home/robonet/widowx_envs/widowx_envs/test.py"
+
+Step stuff:
+# if res1 != WidowXStatus.SUCCESS:
+#     print('Move failed, falling back to relative step_action to reach pose1')
+#     # fallback via step_action: compute delta and perform multiple smaller steps
+#     # Use current-to-target delta approximation. Use small steps of max 0.02m per axis.
+#     delta = p1 - p2 if np.allclose(p2, p1) else p1 - p2
+#     # If delta seems empty, try small step
+#     step = np.array(delta)
+#     max_step = 0.02
+#     # scale step to be <= max_step
+#     for axis in range(3):
+#         if abs(step[axis]) > max_step:
+#             step[axis] = np.sign(step[axis]) * max_step
+#     # append zeros for rotation/gripper control
+#     step_action = np.concatenate([step[:3], np.zeros(3), [1]])
+#     for j in range(10):
+#         print(f'  step_action attempt {j+1} ->', step_action)
+#         r = client.step_action(step_action, blocking=True)
+#         print('  step_action result:', r)
+#         time.sleep(0.5)
+
+Things to edit maybe:
+Widowx_controller.py
+- ModifiedKinSpace
+pick_and_place.py / bot.py /
+
+Home used by chess-bot team:
+# client.move(np.array([0.15, 0, 0.15, 0, 1.5, 0])) # Move home
+# [x,y,z,roll,pitch,yaw]
+
+in meters
