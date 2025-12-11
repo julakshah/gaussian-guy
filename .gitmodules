@@ -1,0 +1,3 @@
+[submodule "gsplat"]
+	path = gsplat
+	url = git@github.com:nerfstudio-project/gsplat.git
