@@ -15,7 +15,8 @@ def logit(x, eps=1e-6):
     return torch.log(x / (1 - x))
 
 if __name__ == "__main__":
-    src = "../../gsplat/examples/results/personhall_downsample/ckpts/ckpt_29999_rank0.pt"
+    #src = "../../gsplat/examples/results/personhall_downsample/ckpts/ckpt_29999_rank0.pt"
+    src = "./results/estop_2/ckpts/ckpt_6999_rank0.pt"
     dst = "./modified_gaussians.pt"
 
     checkpoint_data = torch.load(src, map_location='cpu')
@@ -51,7 +52,7 @@ if __name__ == "__main__":
     data_in = np.concatenate([numpy_data['means'],numpy_data['sh0'].squeeze(1),numpy_data['sh0'].squeeze(1)],axis=1)
     print(f"Input data shape: {data_in.shape}")
 
-    clusterer = hdbscan.HDBSCAN(min_cluster_size=500,cluster_selection_method="leaf")
+    clusterer = hdbscan.HDBSCAN(min_cluster_size=1000,cluster_selection_method="leaf")
     t0 = time.perf_counter()
     print(f"Fitting data")
 
