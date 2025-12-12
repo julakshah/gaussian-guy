@@ -1,82 +1,64 @@
 #!/usr/bin/env python3
 
+import threading
 import argparse
 import numpy as np
 import math
 import time
 from widowx_envs.widowx_env_service import WidowXClient, WidowXConfigs, WidowXStatus
-from move_from_trajectory import move_from_trajectory
+from move_from_trajectory import arm_controller
 
 
 def main():
-    captures = 0
-    parser = argparse.ArgumentParser(
-        description='WidowX robotic arm for 3D imaging with gaussian splatting')
 
-    parser.add_argument('--ip', type=str, default='localhost')
-    parser.add_argument('--port', type=int, default=5556)
+    controller = arm_controller()
 
-    parser.add_argument('--repeats', type=int, default=4,
-                        help='Number of back-and-forth repeats')
-    parser.add_argument('--sleep', type=float, default=1,
-                        help='Time to sleep between moves (seconds)')
-    parser.add_argument('--pose1', type=float, nargs=6,
-                        default=[0.1, 0, 0.15, 0, 1.5, 0], help='First pose')
-    parser.add_argument('--pose2', type=float, nargs=6,
-                        default=[0.1, 0.05, 0.15, 0, 1.5, 0], help='Second pose')
+    while (controller.scan_position_reached != True):
+        print("while loop")
+        time.sleep(0.5)
 
-    args = parser.parse_args()
+    print("Scan Position Reached (controller)")
+    controller.circle_path([0.3, 0])
+
+    test_thread = threading.Thread(target=controller.loop_wrapper)
+    test_thread.start()
+
+    while (controller.has_objective):
+        if (controller.reached_objective):
+            controller.destinations_reached += 1
+            print(f"Objective {controller.destinations_reached} reached")
+            time.sleep(2)
+            controller.reached_objective = False
+
+    controller.shutdown()
 
     # Initialization
-    client = WidowXClient(host=args.ip, port=args.port)
-    client.init(WidowXConfigs.DefaultEnvParams, image_size=256)
-    print('Waiting 5s to ensure server fully initialized...')
-    time.sleep(5)
-    print("Starting robot.")
+    # client = WidowXClient(host=args.ip, port=args.port)
+    # client.init(WidowXConfigs.DefaultEnvParams, image_size=256)
+    # print('Waiting 5s to ensure server fully initialized...')
+    # time.sleep(5)
+    # print("Starting robot.")
 
-    # Initial Reset
-    print('Resetting robot to neutral')
-    r = client.reset()
-    print('Reset status:', r)
-    time.sleep(2)
+    # Camera Test
 
-    radius = .1
-    angles = np.linspace(0, 2*np.pi, 20)
+    # x limit test
+    # client.move(np.array([0.15, 0, 0.15, 0, 1.5, 0]))
+    # time.sleep(3)
+    # client.move(np.array([0.3, 0, 0.15, 0, 1.5, 0]))
+    # time.sleep(3)
+    # client.move(np.array([0.45, 0, 0.15, 0, 1.5, 0]))
+    # time.sleep(3)
+    # client.move(np.array([0.6, 0, 0.15, 0, 1.5, 0]))
+    # time.sleep(3)
 
-    xs = np.array(radius*np.cos(angles)) + 0.3
-    ys = -np.array(radius*np.sin(angles))
-    rolls = np.array(angles)
-
-    trajectory = np.empty((23,), dtype=object)
-
-    for i in range(10):
-        trajectory[i] = np.array(
-            [xs[i], ys[i], 0.025, rolls[i], 1.5, 0])
-    for i in range(3):
-        trajectory[i+10] = np.array(
-            [xs[9], ys[9], 0.025, (rolls[9]-((i+1)*rolls[9]/3)), 1.5, 0])
-    for i in range(10):
-        trajectory[i+13] = np.array(
-            [xs[i+10], ys[i+10], 0.025, rolls[i+10], 1.5, 0])
-        
-    time.sleep(5)
-    move_from_trajectory(trajectory,client,0.25)
-
-    print("finished")
-    time.sleep(5)
+    # print("finished")
+    # time.sleep(5)
 
     # Final Reset
-    print('Resetting robot to neutral')
-    r = client.reset()
-    print('Reset status:', r)
-    time.sleep(2)
-
-# def get_tf_mat(pose):
-#     # convert pose to a 4x4 tf matrix, rpy to quat
-#     quat = quaternion_from_euler(pose[3], pose[4], pose[5])
-#     tf_mat = quaternion_matrix(quat)
-#     tf_mat[:3, 3] = pose[:3]
-#     return tf_mat
+    # print('Resetting robot to neutral')
+    # r = client.reset()
+    # print('Reset status:', r)
+    # time.sleep(2)
 
 
 def find_pickup_droop(pickup_point):

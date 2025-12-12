@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
+import threading
 import argparse
 import numpy as np
 import math
 import time
 from widowx_envs.widowx_env_service import WidowXClient, WidowXConfigs, WidowXStatus
+
 
 class arm_controller():
     def __init__(self):
@@ -12,36 +14,74 @@ class arm_controller():
         self.client = WidowXClient(host='localhost', port=5556)
 
         self.scanning = True
+        self.scan_position_reached = False
         self.has_objective = False
         self.reached_objective = False
 
+        self.destinations_reached = 0
+
         self.trajectory = []
 
+        # Initialize arm
         self.initialize_arm()
-        self.initial_scan()
+        time.sleep(5)
 
-        while self.scanning:
-            if self.has_objective:
-                self.traj_move()
-                time.sleep(1)
+        # Go to initial scan position
+        # self.initial_scan()
+        # time.sleep(5)
+
+        # Reset after scan position
+        # self.client.reset()
+        # time.sleep(5)
+
+        self.scan_position_reached = True
+
+    def initial_scan(self):
+        self.client.move(np.array([0.2, 0, 0.3, 0, 1.5, 0]), blocking=True)
+        self.client.move(np.array([0.15, 0, 0.3, 1, 1.5, 0]), blocking=True)
+        self.client.move(np.array([0.15, 0, 0.3, 2, 1.5, 0]), blocking=True)
+        self.client.move(np.array([0.15, 0, 0.3, 3, 1.5, 0]), blocking=True)
+        self.client.move(np.array([0.15, 0, 0.4, 3, 1.5, 0]), blocking=True)
+        self.client.move(np.array([0.25, 0, 0.4, 3, 0.5, 0]), blocking=True)
+        self.client.move(np.array([0.15, 0, 0.6, 3, 5.5, 0]), blocking=True)
+        self.scan_position_reached = True
+        print("Scan Position Reached (controller)")
+
+    def circle_path(self, center_pos):
+
+        if center_pos[0] + 0.10 <= 0.4:
+            min_x = 0.15
+
+            radius = min(0.10, center_pos[0]-min_x)
+            angles = np.concatenate(
+                [np.linspace(0, 2*np.pi, 72)[36:72], np.linspace(0, 2*np.pi, 72)[0:36]])
+
+            xs = np.array(radius*np.cos(angles)) + center_pos[0]
+            ys = -np.array(radius*np.sin(angles)) + center_pos[1]
+            rolls = np.array(angles)
+
+            for i in range(72):
+                self.trajectory.append(np.array(
+                    [xs[i], ys[i], 0.05, rolls[i], 1.5, 0]))
+
+            self.has_objective = True
+            print("Circle Path Added")
+        else:
+            print("Object to far, initial circle skipped")
+
+    def loop_wrapper(self):
+        while (self.scanning):
+            if (self.has_objective and not self.reached_objective):
+                self.trajectory_move()
             else:
                 time.sleep(0.1)
 
-    def initial_scan(self):
-        # self.client.move()
-        # time.sleep(5)
-        pass
-
-    def circle_path(self, center_pos):
-        # make circle path around x,y,z position
-        pass
-    
     def initialize_arm(self):
         self.client.init(WidowXConfigs.DefaultEnvParams, image_size=256)
         print('Waiting 5s to ensure server fully initialized...')
         time.sleep(5)
         print("Starting robot.")
-    
+
     def add_to_trajectory(self, point):
         self.trajectory.append(point)
         self.has_objective = True
@@ -50,26 +90,15 @@ class arm_controller():
         self.scanning = False
 
     def trajectory_move(self):
-        self.client.move(np.array(self.trajectory.pop[0]))
+        self.client.move(np.array(self.trajectory.pop(0)),
+                         blocking=True, duration=1)
+        time.sleep(1)
+        self.reached_objective = True
         if len(self.trajectory) == 0:
             self.has_objective = False
 
-
-
-def move_from_trajectory(trajectory, client, slpTime):
-    # Go to first point
-    client.move(np.array([trajectory[0][0], trajectory[1][0], trajectory[2]
-                [0], trajectory[3][0], trajectory[4][0], trajectory[5][0]]))
-    time.sleep(5)
-
-    # Follow Trajectory
-    for point in trajectory:
-        client.move(
-            np.array([point[0], point[1], point[2], point[3], point[4], point[5]]))
-        time.sleep(slpTime)
-
-    print("finished")
-    time.sleep(5)
+    def next(self):
+        self.reached_objective = False
 
 # def find_pickup_droop(pickup_point):
 #     a = distance_from_zero_zero(pickup_point)
