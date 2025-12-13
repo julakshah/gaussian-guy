@@ -1,3 +1,28 @@
+"""Frontier navigation using A* on an Octree"""
+"""
+While true:
+    frontiers = find_unknown_leaves(octree)
+
+    if frontiers is empty:
+        break
+    
+    goal = closest_frontier(frontiers, start_pos)
+    path = A_Star(octree, start_pos, goal)
+
+    if path is empty:
+        set goal as occupied
+        continue
+    
+    for node in path:
+        move_to(node.position)
+
+        # Simulate sensor update
+        sensor_data = get_sensor_data(current_pos)
+
+        if map_changed(sensor_data):
+            break  # Replan
+"""
+
 import heapq
 from typing import Dict, List, Tuple
 import numpy as np
@@ -7,6 +32,8 @@ import random
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import time
 
+#### LLM
+SAFETY_MARGIN = 0.5
 
 def calculate_h(position, dest):
     h = np.sqrt((position[0] - dest[0])**2 + (position[1] - dest[1])**2 + (position[2] - dest[2])**2)
@@ -21,6 +48,25 @@ def reconstruct_path(node_path, current_node):
         current_node = node_path[current_node]
         path.append(current_node)
     return path[::-1]
+
+def is_safe_node(node: OctreeNode, root: OctreeNode, safety_margin: float = SAFETY_MARGIN) -> bool: ####LLM
+    """
+    Check if a node is safe to traverse (not occupied and maintains safety margin).
+    A node is unsafe if it's occupied OR if any occupied cell is within safety_margin.
+    """
+    if node.status == 'occupied':
+        return False
+    
+    # Check all neighbors within safety margin
+    # We need to check a sphere of radius safety_margin around the node
+    neighbors = node.get_neighbors(root)
+    for neighbor in neighbors:
+        if neighbor.status == 'occupied':
+            dist = calculate_h(node.position, neighbor.position)
+            if dist < safety_margin:
+                return False
+    
+    return True
 
 def find_path(start, goal, root: OctreeNode) -> List[Tuple[int, int]]:
     """
@@ -53,8 +99,7 @@ def find_path(start, goal, root: OctreeNode) -> List[Tuple[int, int]]:
             return reconstruct_path(node_path, current_node)
         
         for neighbor in current_node.get_neighbors(root):
-
-            if neighbor.status == 'occupied':
+            if not is_safe_node(neighbor, root):
                 continue
 
             tentative_g = g_score[current_node] + calculate_h(current_node.position, neighbor.position)
@@ -81,17 +126,13 @@ def choose_goal(root: OctreeNode, start_pos: Tuple[float, float, float]) -> Tupl
     return closest_unknown.position
 
 def find_unknown_leaves(node: OctreeNode, unknown_leaves: list):
-    """Recursive function to find all unknown leaves"""
-    # Found leaf
-    if node.children is None:
+    # If leaf node
+    if node.children[0] is None:
+        if node.status == "unknown":
+            unknown_leaves.append(node)
         return
-
-    # Found unknown leaf
-    if node.children[0] is None and node.status == "unknown":
-        unknown_leaves.append(node)
-        return
-
-    # Else recurse
+    
+    # Else check all children
     for child in node.children:
         find_unknown_leaves(child, unknown_leaves)
 
@@ -151,5 +192,3 @@ if __name__ == "__main__":
         visualize_path(root, path)
     else:
         print("No path found")
-
-    interactive_update_loop(root, start_pos, goal_pos)

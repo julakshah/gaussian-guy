@@ -5,6 +5,7 @@ MILESTONE 2:
 
 1. Get camera working (line vision)
 2. Object detection (needs to encode position in 3D space)
+3. Camera has min distance of ~6in -> have that be an offset so that A* stays 6in further from object location
 
 Pipeline--
 1. Raise to overview height
@@ -16,4 +17,11 @@ Pipeline--
 4. Go around in circle
     Should just be Move it? Ask Grant
 5. Return to overview/sleep
+
+
+
+
+
+EXTRA:
+1. A* -> Theta* -> Lazy Theta*
 

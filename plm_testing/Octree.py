@@ -14,7 +14,7 @@ class OctreeNode:
         self.position = position    # (x, y, z)
         self.r = r  # radius
         self.status = 'unknown'
-        self.parent = parent        # Parent node for path reconstruction
+        self.parent = parent
         self.children = [None] * 8  # Child nodes
 
     def splitting(self):
@@ -172,7 +172,6 @@ class OctreeNode:
             leaf.status = "empty"
 
         leaf.update_parents()
-
 
     def update_parents(self):
         """Update parent nodes to prune unnecessary children"""
