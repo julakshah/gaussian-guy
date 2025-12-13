@@ -9,9 +9,38 @@ from A_Star_octree import calculate_h, find_path, find_unknown_leaves, is_safe_n
 from Octree import OctreeNode
 
 # Config
-VISUALIZATION = True  # Set to False if you just want text output
-STEP_DELAY = 0.005      # Delay in seconds for visualization
-INIT_RADIUS = 10.0 # Radius of the starting circular pass
+# Simulation Parameters
+NUM_OBSTACLES = 200              # Number of random obstacles in environment
+START_POSITION = (-18, -18, -18)  # Starting position for robot
+WORLD_BOUNDS = 200.0             # +/- bounds of the world
+
+# Sensor Parameters
+SENSOR_RANGE = 50.0             # Maximum detection range of sensor
+# MAX_LEAF_SIZE = 1.0             # Maximum leaf size when updating map
+
+# Initial Exploration
+INIT_RADIUS = 10.0              # Radius of the starting circular scan
+INIT_CIRCLE_STEPS = 40          # Number of waypoints in circular scan
+
+# Visualization
+VISUALIZATION = True            # Set to False for text-only output
+STEP_DELAY = 0.00005              # Delay in seconds between viz updates
+VIZ_FIGURE_SIZE = (10, 8)       # Figure size for visualization
+
+# Display Colors
+COLOR_PATH = 'blue'             # Color for planned path
+COLOR_ROBOT = 'green'           # Color for robot marker
+COLOR_FRONTIER = 'orange'       # Color for frontier nodes
+COLOR_OBSTACLES = 'black'       # Color for true obstacles (ghost view)
+
+# Display Sizes
+SIZE_ROBOT = 100                # Size of robot marker
+SIZE_FRONTIER = 30              # Size of frontier markers
+SIZE_OBSTACLE = 10              # Size of obstacle markers
+
+# Display Alpha
+ALPHA_FRONTIER = 0.8            # Opacity of frontier markers
+ALPHA_OBSTACLE = 0.1            # Opacity of true obstacles (ghost)
 
 def visualize(ax, robot_map, robot_pos, path, frontiers, true_obstacles, title_text):
     """Helper to keep the main loop clean."""
@@ -28,6 +57,18 @@ def visualize(ax, robot_map, robot_pos, path, frontiers, true_obstacles, title_t
             xs, ys, zs = zip(*path) # Handle raw coordinate tuples
         ax.plot(xs, ys, zs, color='blue', linewidth=2)
 
+    # --- 1. Draw Sensor Range (Wireframe Sphere) --- ####llm
+    # Create a generic sphere
+    u = np.linspace(0, 2 * np.pi, 13) # Low resolution for speed (13 points)
+    v = np.linspace(0, np.pi, 7)
+    x = SENSOR_RANGE * np.outer(np.cos(u), np.sin(v)) + robot_pos[0]
+    y = SENSOR_RANGE * np.outer(np.sin(u), np.sin(v)) + robot_pos[1]
+    z = SENSOR_RANGE * np.outer(np.ones(np.size(u)), np.cos(v)) + robot_pos[2]
+    
+    # Plot as a light wireframe
+    ax.plot_wireframe(x, y, z, color='cyan', alpha=0.2)
+    # -----------------------------------------------
+
     # Draw Robot
     ax.scatter([robot_pos[0]], [robot_pos[1]], [robot_pos[2]], color='green', s=100, label='Robot')
 
@@ -40,7 +81,7 @@ def visualize(ax, robot_map, robot_pos, path, frontiers, true_obstacles, title_t
     obs_x, obs_y, obs_z = zip(*true_obstacles)
     ax.scatter(obs_x, obs_y, obs_z, c='black', alpha=0.1, s=10)
     
-    ax.set_xlim(-25, 25); ax.set_ylim(-25, 25); ax.set_zlim(-25, 25)
+    ax.set_xlim(-WORLD_BOUNDS, WORLD_BOUNDS); ax.set_ylim(-WORLD_BOUNDS, WORLD_BOUNDS); ax.set_zlim(-WORLD_BOUNDS, WORLD_BOUNDS)
     ax.set_title(title_text)
     plt.draw()
     plt.pause(STEP_DELAY)
@@ -70,7 +111,7 @@ def update_cell_with_max_size(root, pos, is_occupied, max_leaf_size=2.0):
     # 4. Cleanup parents (optional, but keeps tree clean)
     leaf.update_parents() #
 
-def simulate_sensor(robot_pos, true_obstacles, octree_root, sensor_range=20.0):
+def simulate_sensor(robot_pos, true_obstacles, octree_root, sensor_range=SENSOR_RANGE):
     """
     Simulates a sensor reading
     1. Detects obstacles within sensor_range.
@@ -79,18 +120,22 @@ def simulate_sensor(robot_pos, true_obstacles, octree_root, sensor_range=20.0):
     """
     map_changed = False
     
-    # 1. Detect Obstacles (The "Hits")
+    # 1. Detect Obstacles
     for obs in true_obstacles:
         dist = np.sqrt((obs[0]-robot_pos[0])**2 + (obs[1]-robot_pos[1])**2 + (obs[2]-robot_pos[2])**2)
         
         if dist <= sensor_range:
+            # Skip obstacles outside map bounds
+            leaf = octree_root.find_leaf(obs)
+            if leaf is None:
+                continue
             # If the robot thinks this is unknown or empty, but it's actually occupied:
             current_status = octree_root.find_leaf(obs).status
             if current_status != 'occupied':
                 update_cell_with_max_size(octree_root, obs, is_occupied=True, max_leaf_size=1.0)
                 map_changed = True
 
-    # 2. Clear Empty Space (The "Misses")
+    # 2. Clear Empty Space
     # In a real implementation, you would Raycast. 
     # For this simulation, we can just mark the immediate area around the robot as empty
     # if there is no obstacle there.
@@ -103,7 +148,7 @@ def simulate_sensor(robot_pos, true_obstacles, octree_root, sensor_range=20.0):
     return map_changed
 
 def autonomous_exploration(start_pos, true_obstacles):
-    robot_map = OctreeNode(position=(0,0,0), r=20) 
+    robot_map = OctreeNode(position=(0,0,0), r=WORLD_BOUNDS) 
     current_pos = start_pos
     
     # Setup Visualization
@@ -153,7 +198,8 @@ def autonomous_exploration(start_pos, true_obstacles):
         iteration += 1
         
         #### LLM Debug
-        
+        if iteration % 10 == 0:
+            print(f"\n[Debug] Iter {iteration}: {len(frontiers)} frontiers, exploring {goal_pos}")
 
         # 1. Find Frontiers
         frontiers = []
@@ -205,8 +251,12 @@ def autonomous_exploration(start_pos, true_obstacles):
 if __name__ == "__main__":
     # Define ground truth
     true_obstacles = []
-    for i in range(20):
-        true_obstacles.append((random.uniform(-15,15), random.uniform(-15,15), random.uniform(-15,15)))
-        
-    start = (-18, -18, -18)
-    autonomous_exploration(start, true_obstacles)
+    random.seed(1)  # For reproducibility
+    for i in range(NUM_OBSTACLES):
+        true_obstacles.append((
+            random.uniform(-WORLD_BOUNDS+5, WORLD_BOUNDS-5),
+            random.uniform(-WORLD_BOUNDS+5, WORLD_BOUNDS-5),
+            random.uniform(-WORLD_BOUNDS+5, WORLD_BOUNDS-5)
+        ))
+
+    autonomous_exploration(START_POSITION, true_obstacles)
