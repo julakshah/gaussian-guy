@@ -24,7 +24,7 @@ def reconstruct_path(node_path, current_node):
 
 def find_path(start, goal, root: OctreeNode) -> List[Tuple[int, int]]:
     """
-    Find the optimal path using A* algorithm.
+    A* algorithm
     """
     # Branch octree to get start and goal nodes
     start_node = root.find_leaf(start)
@@ -68,6 +68,32 @@ def find_path(start, goal, root: OctreeNode) -> List[Tuple[int, int]]:
                 heapq.heappush(queue, (f_score[neighbor], step_count, neighbor))
         
     return []
+
+def choose_goal(root: OctreeNode, start_pos: Tuple[float, float, float]) -> Tuple[float, float, float]:
+    """Identify and update the closest unknown cell as the goal"""
+    unknown_leaves = []
+    find_unknown_leaves(root, unknown_leaves)
+
+    if not unknown_leaves:
+        return None
+
+    closest_unknown = min(unknown_leaves, key=lambda leaf: calculate_h(leaf.position, start_pos))
+    return closest_unknown.position
+
+def find_unknown_leaves(node: OctreeNode, unknown_leaves: list):
+    """Recursive function to find all unknown leaves"""
+    # Found leaf
+    if node.children is None:
+        return
+
+    # Found unknown leaf
+    if node.children[0] is None and node.status == "unknown":
+        unknown_leaves.append(node)
+        return
+
+    # Else recurse
+    for child in node.children:
+        find_unknown_leaves(child, unknown_leaves)
 
 def visualize_path(root: OctreeNode, path: List[OctreeNode]):
     fig = plt.figure()
@@ -125,3 +151,5 @@ if __name__ == "__main__":
         visualize_path(root, path)
     else:
         print("No path found")
+
+    interactive_update_loop(root, start_pos, goal_pos)
