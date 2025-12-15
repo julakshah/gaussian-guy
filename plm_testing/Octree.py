@@ -10,19 +10,18 @@ class OctreeNode:
 
     status: 'unknown', 'empty', 'occupied'
     """
-    def __init__(self, position, r=20, parent=None, max_depth=4):
+    def __init__(self, position, r=20, parent=None, min_r=1.0,):
         self.position = position    # (x, y, z)
         self.r = r  # radius
         self.status = 'unknown'
         self.parent = parent
         self.children = [None] * 8  # Child nodes
-        self.max_depth = max_depth
-        self.leaf_size = self.r / (2 ** self.max_depth) # Used in raycasting
+        self.min_r = min_r
 
     def splitting(self):
         """Split node into smaller nodes"""
         # Check if already split or minimum size
-        if (self.children[0] is not None) or (self.r <= 0.05):
+        if (self.children[0] is not None) or (self.r/2 < self.min_r):
             return
         
         # Values for child nodes
@@ -45,14 +44,14 @@ class OctreeNode:
                 ),
                 r=new_r,
                 parent=self,
-                max_depth=self.max_depth
+                min_r=self.min_r,
             )
-        self.status = 'internal'
+        self.status = 'container'
     
     def get_status(self):
-        # If children, internal node so status is irrelevant.
+        # If children, container node so status is irrelevant.
         if self.children[0] is not None:
-            return 'internal' 
+            return 'container' 
         
         # If no children, return actual data
         return self.status
@@ -76,21 +75,24 @@ class OctreeNode:
         """Updates octree to contain the given obstacle"""
         current_node = self
 
-        # Check if already occupied
-        if self.get_status() == 'occupied':
-            return True
-
         # Check if obstacle in node bounds
         if (abs(obstacle_pos[0] - self.position[0]) > self.r or
             abs(obstacle_pos[1] - self.position[1]) > self.r or
             abs(obstacle_pos[2] - self.position[2]) > self.r):
             return False 
+
+        # Check if already occupied
+        if self.get_status() == 'occupied':
+            return True
         
         # If at minimum size, mark as occupied
-        while current_node.r > 1:
+        while True:
 
             if current_node.children[0] is None:
                 current_node.splitting()
+
+                if current_node.children[0] is None:
+                    break  # Reached min size
             
             # Check child nodes
             relative_pos = (
@@ -227,7 +229,7 @@ class OctreeNode:
         
         # 2. Step size
         # r/2 ensures we don't skip over any voxels (Nyquist sampling)
-        step_size = self.leaf_size / 2.0 ### Change to leaf size?
+        step_size = self.min_r / 2 ### Change to leaf size?
         
         # 3. Loop using simple addition
         current_dist = 0.0
@@ -273,13 +275,13 @@ class OctreeNode:
     def draw(self, ax): ####
         """Recursively draw the tree:
         - Occupied nodes: solid red
-        - Internal nodes: transparent wireframe
+        - Container nodes: transparent wireframe
         """
         if self.children[0] is None:
             if self.status == 'occupied':
                 self.draw_cube(ax, facecolor='red', edgecolor='black', alpha=1.0)
         else:
-            # Draw internal node wireframe first
+            # Draw container node wireframe first
             self.draw_cube(ax, facecolor='white', edgecolor='gray', alpha=0.1)
             for child in self.children:
                 child.draw(ax)
