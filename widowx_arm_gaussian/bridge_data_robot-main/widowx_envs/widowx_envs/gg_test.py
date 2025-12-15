@@ -9,8 +9,8 @@ import shutil
 import time
 import rospy
 from widowx_envs.widowx_env_service import WidowXClient, WidowXConfigs, WidowXStatus
-from arm_controller import arm_controller
-from camera_controller import camera_controller
+from gg_arm_controller import arm_controller
+from gg_camera_controller import camera_controller
 
 
 def main():

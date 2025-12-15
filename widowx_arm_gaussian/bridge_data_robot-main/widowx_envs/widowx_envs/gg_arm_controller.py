@@ -68,7 +68,6 @@ class arm_controller():
             pitches = -np.array(yaw*(np.cos(angles))) + 1.5 # * abs(np.cos(angles))
 
             droop_assist = np.array([find_pickup_droop([xs[i],ys[i]]) for i in range(72)])
-            print(droop_assist)
 
             for i in range(72):
                 self.trajectory.append(np.array(
