@@ -216,7 +216,7 @@ if "mask" in data:
     print(f"Masks shape: {masks.shape}")
 # render
 render_colors, render_alphas, meta = rasterization(
-    means, quats, scales, opacities, colors, viewmats, Ks_ds[:], W2, H2, render_mode='RGB',
+    means, quats, torch.exp(scales), torch.sigmoid(opacities), colors, viewmats, Ks_ds[:], W2, H2, render_mode='RGB',
     sh_degree=3
 )
 print("alpha min/max/mean:", render_alphas.min().item(), render_alphas.max().item(), render_alphas.mean().item())
@@ -227,7 +227,9 @@ if masks is not None:
 print(f"Colors after raster: {render_colors}")
 print(f" downscaled pixels shape: {downscaled_pixels.shape}, render color shape: {render_colors.shape}")
 
-canvas_list = [downscaled_pixels,render_colors]
+error_im = torch.abs(downscaled_pixels - render_colors) * 5
+canvas_list = [downscaled_pixels,render_colors,error_im]
+
 print(canvas_list)
 canvas = torch.cat(canvas_list, dim=2).squeeze(0).cpu().numpy()
 print(f"canvas shape: {canvas.shape}")
