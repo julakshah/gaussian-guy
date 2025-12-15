@@ -16,11 +16,7 @@ While true:
     for node in path:
         move_to(node.position)
 
-        # Simulate sensor update
         sensor_data = get_sensor_data(current_pos)
-
-        if map_changed(sensor_data):
-            break  # Replan
 """
 
 import heapq
@@ -114,8 +110,8 @@ def find_path(start, goal, root: OctreeNode) -> List[Tuple[int, int]]:
         
     return []
 
-def choose_goal(root: OctreeNode, start_pos: Tuple[float, float, float]) -> Tuple[float, float, float]:
-    """Identify and update the closest unknown cell as the goal"""
+def closest_unknown(root: OctreeNode, start_pos: Tuple[float, float, float]) -> Tuple[float, float, float]:
+    """Identify closest unknown cell"""
     unknown_leaves = []
     find_unknown_leaves(root, unknown_leaves)
 
@@ -124,6 +120,34 @@ def choose_goal(root: OctreeNode, start_pos: Tuple[float, float, float]) -> Tupl
 
     closest_unknown = min(unknown_leaves, key=lambda leaf: calculate_h(leaf.position, start_pos))
     return closest_unknown.position
+
+def go_to_goal(root: OctreeNode, start_pos: Tuple[float, float, float]) -> List[Tuple[int, int]]:
+    """Plan path to goal using A*"""
+    standoff_distance = 2.5
+
+    unknown_pos = closest_unknown(root, start_pos)
+
+    if unknown_pos is None:
+        return []
+    
+    start_arr = np.array(start_pos)
+    unknown_arr = np.array(unknown_pos)
+
+    direction = start_arr - unknown_arr
+
+    # Calculate distance
+    dist = np.linalg.norm(direction)
+
+    if dist < 1e-6:
+        # Default to backing up in Z+ direction (or any safe default)
+        normalized_dir = np.array([0, 0, 1])
+    else:
+        normalized_dir = direction / dist
+
+    goal_pos = tuple(unknown_arr + (normalized_dir * standoff_distance))
+
+    path = find_path(start_pos, goal_pos, root)
+    return path
 
 def find_unknown_leaves(node: OctreeNode, unknown_leaves: list):
     # If leaf node

@@ -10,12 +10,13 @@ class OctreeNode:
 
     status: 'unknown', 'empty', 'occupied'
     """
-    def __init__(self, position, r=20, parent=None):
+    def __init__(self, position, r=20, parent=None, max_depth=4):
         self.position = position    # (x, y, z)
         self.r = r  # radius
         self.status = 'unknown'
         self.parent = parent
         self.children = [None] * 8  # Child nodes
+        self.max_depth = max_depth
         self.leaf_size = self.r / (2 ** self.max_depth) # Used in raycasting
 
     def splitting(self):
@@ -43,7 +44,8 @@ class OctreeNode:
                     self.position[2] + pos[2] * new_r,
                 ),
                 r=new_r,
-                parent=self
+                parent=self,
+                max_depth=self.max_depth
             )
         self.status = 'internal'
     
@@ -70,7 +72,7 @@ class OctreeNode:
             self.status = first_status
             self.children = [None] * 8  # Remove children
 
-    def insert_obstacle(self, obstacle_pos):
+    def insert_obstacle(self, obstacle_pos): ### change to be "insert_entity" and pass in which type of node
         """Updates octree to contain the given obstacle"""
         current_node = self
 
