@@ -14,7 +14,7 @@ import numpy as np
 import cv2 as cv
 import glob
 
-VIS_FLAG = sys.argv[1]
+VIS_FLAG = bool(sys.argv[1])
 # termination criteria
 criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
@@ -26,9 +26,9 @@ objp[:, :2] = np.mgrid[0:10, 0:7].T.reshape(-1, 2)
 objpoints = []  # 3d point in real world space
 imgpoints = []  # 2d points in image plane.
 
-images = glob.glob(sys.argv[2])
 
-for fname in images:
+for fname in glob.glob(sys.argv[2]):
+    print("iterating")
     img = cv.imread(fname)
     if img is None:
         print("IMAGE COULD NOT BE READ")
@@ -37,7 +37,6 @@ for fname in images:
 
     # Find the chess board corners
     ret, corners = cv.findChessboardCorners(gray, (10, 7), None)
-    print(f"ret is {ret}")
 
     # If found, add object points, image points (after refining them)
     if ret == True:
@@ -52,6 +51,7 @@ for fname in images:
         cv.imshow("img", img)
         cv.waitKey(500)
 
+print(f"objpoints is {objpoints}")
 ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(
     objpoints, imgpoints, gray.shape[::-1], None, None
 )
