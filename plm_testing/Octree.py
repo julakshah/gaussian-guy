@@ -16,11 +16,12 @@ class OctreeNode:
         self.status = 'unknown'
         self.parent = parent
         self.children = [None] * 8  # Child nodes
+        self.leaf_size = self.r / (2 ** self.max_depth) # Used in raycasting
 
     def splitting(self):
         """Split node into smaller nodes"""
         # Check if already split or minimum size
-        if (self.children[0] is not None) or (self.r <= 1):
+        if (self.children[0] is not None) or (self.r <= 0.05):
             return
         
         # Values for child nodes
@@ -204,6 +205,50 @@ class OctreeNode:
                 neighbors.add(neighbor_node)
 
         return list(neighbors)
+    
+    def raycast(self, origin, target):
+        """Have all voxels between origin and target be marked as empty"""
+        diff = (
+            target[0] - origin[0],
+            target[1] - origin[1],
+            target[2] - origin[2],
+        )
+
+        total_dist = (diff[0]**2 + diff[1]**2 + diff[2]**2) ** 0.5
+        
+        # Safety check for zero distance
+        if total_dist == 0:
+            return
+
+        # Normalize direction (The vector of length 1 pointing to target)
+        direction = (diff[0] / total_dist, diff[1] / total_dist, diff[2] / total_dist)
+        
+        # 2. Step size
+        # r/2 ensures we don't skip over any voxels (Nyquist sampling)
+        step_size = self.leaf_size / 2.0 ### Change to leaf size?
+        
+        # 3. Loop using simple addition
+        current_dist = 0.0
+        current_pos = list(origin) # Make mutable
+        
+        # STOP condition: Stop 1 step before the end so we don't erase the target
+        while current_dist < (total_dist - step_size):
+            
+            leaf = self.find_leaf(current_pos)
+            
+            # Only mark if it's currently unknown or occupied? 
+            # Usually we overwrite occupied obstacles if we see through them (dynamic)
+            # But for static scanning, checking "!= occupied" is safer.
+            if leaf and leaf.status != 'occupied':
+                leaf.status = 'empty'
+            
+            # Move forward by adding the step vector
+            current_pos[0] += direction[0] * step_size
+            current_pos[1] += direction[1] * step_size
+            current_pos[2] += direction[2] * step_size
+            
+            current_dist += step_size
+        
 
     def draw_cube(self, ax, facecolor='red', edgecolor='black', alpha=1.0): ####
         """Draws a cube at this node."""
