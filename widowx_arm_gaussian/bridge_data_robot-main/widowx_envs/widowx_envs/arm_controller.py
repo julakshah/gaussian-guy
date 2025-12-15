@@ -10,6 +10,7 @@ from widowx_envs.widowx_env_service import WidowXClient, WidowXConfigs, WidowXSt
 
 class arm_controller():
     def __init__(self):
+        print("arm Init")
 
         self.client = WidowXClient(host='localhost', port=5556)
 
@@ -19,6 +20,7 @@ class arm_controller():
         self.reached_objective = False
 
         self.destinations_reached = 0
+        self.last_objective = [0,0,0,0,0,0]
 
         self.trajectory = []
 
@@ -27,42 +29,50 @@ class arm_controller():
         time.sleep(5)
 
         # Go to initial scan position
-        # self.initial_scan()
-        # time.sleep(5)
-
-        # Reset after scan position
-        # self.client.reset()
-        # time.sleep(5)
+        self.initial_scan()
+        time.sleep(5)
 
         self.scan_position_reached = True
 
+    def reset_arm(self):
+        # Reset after scan position
+        self.client.reset()
+
     def initial_scan(self):
-        self.client.move(np.array([0.2, 0, 0.3, 0, 1.5, 0]), blocking=True)
-        self.client.move(np.array([0.15, 0, 0.3, 1, 1.5, 0]), blocking=True)
-        self.client.move(np.array([0.15, 0, 0.3, 2, 1.5, 0]), blocking=True)
-        self.client.move(np.array([0.15, 0, 0.3, 3, 1.5, 0]), blocking=True)
-        self.client.move(np.array([0.15, 0, 0.4, 3, 1.5, 0]), blocking=True)
-        self.client.move(np.array([0.25, 0, 0.4, 3, 0.5, 0]), blocking=True)
-        self.client.move(np.array([0.15, 0, 0.6, 3, 5.5, 0]), blocking=True)
+        self.client.move(np.array([0.2, 0, 0.3, 0, 1.5, 0]), blocking=True, duration=1)
+        self.client.move(np.array([0.15, 0, 0.4, 0, 1.5, 0]), blocking=True, duration=1)
+        self.client.move(np.array([0.25, 0, 0.4, 0, 0.5, 0]), blocking=True, duration=1)
+        self.client.move(np.array([0.10, 0, 0.525, 0, 5.8, 0]), blocking=True, duration=1)
         self.scan_position_reached = True
         print("Scan Position Reached (controller)")
 
     def circle_path(self, center_pos):
 
-        if center_pos[0] + 0.10 <= 0.4:
-            min_x = 0.15
+        if center_pos[0] + 0.15 <= 0.43:
+            min_x = 0.125
 
-            radius = min(0.10, center_pos[0]-min_x)
+            x_radius = min(0.15, center_pos[0]-min_x)
+            y_radius = x_radius*1.3
+            x_height = 0.100
+            y_height = 0.025
+            droop = 0.025
+            yaw = 0.9
+
             angles = np.concatenate(
                 [np.linspace(0, 2*np.pi, 72)[36:72], np.linspace(0, 2*np.pi, 72)[0:36]])
-
-            xs = np.array(radius*np.cos(angles)) + center_pos[0]
-            ys = -np.array(radius*np.sin(angles)) + center_pos[1]
+            
+            xs = np.array(x_radius*np.cos(angles)) + center_pos[0]
+            ys = -np.array(y_radius*np.sin(angles)) + center_pos[1]
             rolls = np.array(angles)
+            heights = np.array(x_height*abs(np.cos(angles))) + y_height
+            pitches = -np.array(yaw*(np.cos(angles))) + 1.5 # * abs(np.cos(angles))
+
+            droop_assist = np.array([find_pickup_droop([xs[i],ys[i]]) for i in range(72)])
+            print(droop_assist)
 
             for i in range(72):
                 self.trajectory.append(np.array(
-                    [xs[i], ys[i], 0.05, rolls[i], 1.5, 0]))
+                    [xs[i], ys[i], heights[i]-droop_assist[i], rolls[i], pitches[i], 0]))
 
             self.has_objective = True
             print("Circle Path Added")
@@ -90,7 +100,8 @@ class arm_controller():
         self.scanning = False
 
     def trajectory_move(self):
-        self.client.move(np.array(self.trajectory.pop(0)),
+        self.last_objective = self.trajectory.pop(0)
+        self.client.move(np.array(self.last_objective),
                          blocking=True, duration=1)
         time.sleep(1)
         self.reached_objective = True
@@ -100,10 +111,11 @@ class arm_controller():
     def next(self):
         self.reached_objective = False
 
-# def find_pickup_droop(pickup_point):
-#     a = distance_from_zero_zero(pickup_point)
-#     droop = -2.35E-03 + 0.0522*a + -0.216*a**2
-#     return droop
+
+def find_pickup_droop(pickup_point):
+    a = distance_from_zero_zero(pickup_point)
+    droop = -2.35E-03 + 0.0522*a + -0.216*a**2
+    return droop
 
 
 # def find_placing_droop(pickup_point, place_point):
@@ -113,19 +125,19 @@ class arm_controller():
 #     return (pickup_disp - max(place_disp, 0.2)) * -0.0529
 
 
-# def distance_from_zero_zero(point):
-#     """
-#     Calculate the distance between [0, 0] and another point [x, y2.
+def distance_from_zero_zero(point):
+    """
+    Calculate the distance between [0, 0] and another point [x, y2.
 
-#     Args:
-#         point (list or tuple): Coordinates of the point [x, y].
+    Args:
+        point (list or tuple): Coordinates of the point [x, y].
 
-#     Returns:
-#         float: Distance between [0, 0] and the input point.
-#     """
-#     x, y = point
-#     distance = math.sqrt(x**2+y**2)
-#     return distance
+    Returns:
+        float: Distance between [0, 0] and the input point.
+    """
+    x, y = point
+    distance = math.sqrt(x**2+y**2)
+    return distance
 
 
 # def distance_between_points(point1, point2):

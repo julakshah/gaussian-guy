@@ -38,6 +38,11 @@ run test code with
 bash -lic "python3 /home/robonet/widowx_envs/widowx_envs/test.py"
 """
 
+"""
+bash -lic ""
+"""
+
+
 
 |----------------------------------------|
    Inverse Kinematics & Moving the Arm

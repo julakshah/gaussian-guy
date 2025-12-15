@@ -30,3 +30,4 @@ opencv-python
 chess
 apriltag
 shapely
+pyrealsense2
