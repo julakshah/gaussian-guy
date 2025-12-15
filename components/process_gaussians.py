@@ -49,10 +49,10 @@ if __name__ == "__main__":
     print(f"Numpy data: {numpy_data}")
     print(f"sh0 shape: {numpy_data['sh0'].shape}, shN shape: {numpy_data['shN'].shape}")
 
-    data_in = np.concatenate([numpy_data['means'],numpy_data['sh0'].squeeze(1),numpy_data['sh0'].squeeze(1)],axis=1)
+    data_in = np.concatenate([numpy_data['means'],10*numpy_data['sh0'].squeeze(1),numpy_data['sh0'].squeeze(1)],axis=1)
     print(f"Input data shape: {data_in.shape}")
 
-    clusterer = hdbscan.HDBSCAN(min_cluster_size=1000,cluster_selection_method="leaf")
+    clusterer = hdbscan.HDBSCAN(min_cluster_size=1000,min_samples=10,cluster_selection_method="leaf")
     t0 = time.perf_counter()
     print(f"Fitting data")
 
@@ -70,15 +70,36 @@ if __name__ == "__main__":
     colors = np.zeros(shape=(clusterer.labels_.max(),3),dtype=np.float64)
     cmap_indices = np.array(range(clusterer.labels_.max()))
     np.random.shuffle(cmap_indices)
+    valid_labels = []
+
     for label in range(clusterer.labels_.max()):
         color = np.array(cmap(cmap_indices[label]/clusterer.labels_.max())[0:3])
         label_indices = (labels == label)
         print(f"There are {sum(label_indices)} pts with label {label}")
-        numpy_data['sh0'][label_indices,0,:] = color / sh_C0
-    
+        #numpy_data['sh0'][label_indices,0,:] = color / sh_C0
+
+        # We want to filter out the ground to isolate our object. 
+        # To do this, we look at clusters with more horizontal std dev than vertical
+        x_vals = numpy_data['means'][label_indices,0]
+        y_vals = numpy_data['means'][label_indices,1]
+        z_vals = numpy_data['means'][label_indices,2]
+        x_std = np.std(x_vals)
+        y_std = np.std(y_vals)
+        z_std = np.std(z_vals)
+
+        THRESHOLD_FACTOR = 5
+        if not(z_std * THRESHOLD_FACTOR < x_std and z_std * THRESHOLD_FACTOR < y_std):
+            valid_labels.append(label)
+
+
     # Mask out points that don't get matched
     label_indices = (labels == -1)
     print(f"There are {sum(label_indices)} pts without a cluster (outliers)")
+
+    bad_labels = [i for i in range(clusterer.labels_.max()) if i not in valid_labels]
+    for bad_label in bad_labels:
+        label_indices = label_indices | (labels == bad_label)
+
     numpy_data['sh0'][label_indices,0,:] = 0.0
 
     #print(f"Colors: {colors}")
@@ -90,7 +111,7 @@ if __name__ == "__main__":
 
     #color_red = np.array([1.0,0.0,0.0])/sh_C0
     #numpy_data['sh0'][:,0,:] = color_red
-    numpy_data['shN'][:,:,:] = 0.0
+    #numpy_data['shN'][:,:,:] = 0.0
 
     print(f"Opacity Modified: {opacity_modified.numpy()}")
 
