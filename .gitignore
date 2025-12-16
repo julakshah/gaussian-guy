@@ -52,3 +52,7 @@ CATKIN_IGNORE
 
 .DS_Store
 *.jpg
+
+# Node packages for site
+node_modules/
+.next/
