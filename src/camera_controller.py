@@ -7,11 +7,11 @@ def _add_widowx_envs_to_syspath():
     host (repo moved) and inside the container.
     """
     candidates = []
-    # old relative layout (when widowx_arm_gaussian lived next to this file)
-    candidates.append(os.path.join(os.path.dirname(__file__), 'widowx_arm_gaussian', 'bridge_data_robot-main', 'widowx_envs', 'widowx_envs'))
-    # repo-root layout: file is in repo/src, widowx is at repo/widowx_arm_gaussian
+    # old relative layout (when widowx_arm lived next to this file)
+    candidates.append(os.path.join(os.path.dirname(__file__), 'widowx_arm', 'bridge_data_robot-main', 'widowx_envs', 'widowx_envs'))
+    # repo-root layout: file is in repo/src, widowx is at repo/widowx_arm
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-    candidates.append(os.path.join(repo_root, 'widowx_arm_gaussian', 'bridge_data_robot-main', 'widowx_envs', 'widowx_envs'))
+    candidates.append(os.path.join(repo_root, 'widowx_arm', 'bridge_data_robot-main', 'widowx_envs', 'widowx_envs'))
     # common runtime/container paths
     candidates.append('/home/robonet/widowx_envs')
     candidates.append('/home/robonet/host_src')
