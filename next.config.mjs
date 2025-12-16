@@ -1,8 +1,5 @@
 import nextMDX from '@next/mdx'
 
-basePath: '/gaussian-guy',
-assetPrefix: '/gaussian-guy/',
-
 const withMDX = nextMDX({
   extension: /\.mdx$/
 })
@@ -10,5 +7,10 @@ const withMDX = nextMDX({
 export default withMDX({
   pageExtensions: ['js', 'jsx', 'mdx'],
   output: 'export',
-  images: { unoptimized: true }
+  images: { unoptimized: true },
+
+  // GitHub Pages project path
+  basePath: '/gaussian-guy',
+  assetPrefix: '/gaussian-guy/',
 })
+
