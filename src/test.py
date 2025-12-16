@@ -2,15 +2,33 @@
 
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'widowx_arm_gaussian/bridge_data_robot-main/widowx_envs/widowx_envs'))
-# When running in container, also add the container's widowx_envs package location
-if os.path.exists('/home/robonet/widowx_envs'):
-    sys.path.insert(0, '/home/robonet/widowx_envs')
 
-from gg_octree import OctreeNode
-from gg_a_star_octree import go_to_goal, find_unknown_leaves
-from gg_camera_controller import camera_controller
-from gg_arm_controller import arm_controller
+# sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'widowx_arm_gaussian/bridge_data_robot-main/widowx_envs/widowx_envs'))
+# # When running in container, also add the container's widowx_envs package location
+# if os.path.exists('/home/robonet/widowx_envs'):
+#     sys.path.insert(0, '/home/robonet/widowx_envs')
+
+def _add_widowx_envs_to_syspath():
+    candidates = []
+    candidates.append(os.path.join(os.path.dirname(__file__), 'widowx_arm_gaussian', 'bridge_data_robot-main', 'widowx_envs', 'widowx_envs'))
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    candidates.append(os.path.join(repo_root, 'widowx_arm_gaussian', 'bridge_data_robot-main', 'widowx_envs', 'widowx_envs'))
+    candidates.append('/home/robonet/widowx_envs')
+    candidates.append('/home/robonet/host_src')
+
+    for p in candidates:
+        if os.path.isdir(p):
+            if p not in sys.path:
+                sys.path.insert(0, p)
+            return
+
+
+_add_widowx_envs_to_syspath()
+
+from octree import OctreeNode
+from a_star_octree import go_to_goal, find_unknown_leaves
+from camera_controller import camera_controller
+from arm_controller import arm_controller
 import open3d
 import rospy
 import time
@@ -180,9 +198,11 @@ def main():
 
     # print("Object scanned")
 
-    # Save frames in folder
-    frames_dir = os.path.join(os.path.dirname(__file__), 'images')
-    shutil.rmtree(frames_dir)
+    # Save frames in folder. Simpler: use `../images` (one level up from src).
+    frames_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'images'))
+    # remove existing and recreate
+    if os.path.isdir(frames_dir):
+        shutil.rmtree(frames_dir)
     os.makedirs(frames_dir, exist_ok=True)
 
     for i in range(len(frames)):

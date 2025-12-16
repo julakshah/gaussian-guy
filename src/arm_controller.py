@@ -2,10 +2,29 @@
 
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'widowx_arm_gaussian/bridge_data_robot-main/widowx_envs/widowx_envs'))
-# When running in container, also add the container's widowx_envs package location
-if os.path.exists('/home/robonet/widowx_envs'):
-    sys.path.insert(0, '/home/robonet/widowx_envs')
+
+
+# sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'widowx_arm_gaussian/bridge_data_robot-main/widowx_envs/widowx_envs'))
+# # When running in container, also add the container's widowx_envs package location
+# if os.path.exists('/home/robonet/widowx_envs'):
+#     sys.path.insert(0, '/home/robonet/widowx_envs')
+
+def _add_widowx_envs_to_syspath():
+    candidates = []
+    candidates.append(os.path.join(os.path.dirname(__file__), 'widowx_arm_gaussian', 'bridge_data_robot-main', 'widowx_envs', 'widowx_envs'))
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    candidates.append(os.path.join(repo_root, 'widowx_arm_gaussian', 'bridge_data_robot-main', 'widowx_envs', 'widowx_envs'))
+    candidates.append('/home/robonet/widowx_envs')
+    candidates.append('/home/robonet/host_src')
+
+    for p in candidates:
+        if os.path.isdir(p):
+            if p not in sys.path:
+                sys.path.insert(0, p)
+            return
+
+
+_add_widowx_envs_to_syspath()
 
 import threading
 import argparse

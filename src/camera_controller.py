@@ -1,6 +1,29 @@
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'widowx_arm_gaussian/bridge_data_robot-main/widowx_envs/widowx_envs'))
+
+def _add_widowx_envs_to_syspath():
+    """Try several likely locations for the `widowx_envs/widowx_envs` package
+    and add the first existing one to `sys.path` so imports work both on the
+    host (repo moved) and inside the container.
+    """
+    candidates = []
+    # old relative layout (when widowx_arm_gaussian lived next to this file)
+    candidates.append(os.path.join(os.path.dirname(__file__), 'widowx_arm_gaussian', 'bridge_data_robot-main', 'widowx_envs', 'widowx_envs'))
+    # repo-root layout: file is in repo/src, widowx is at repo/widowx_arm_gaussian
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    candidates.append(os.path.join(repo_root, 'widowx_arm_gaussian', 'bridge_data_robot-main', 'widowx_envs', 'widowx_envs'))
+    # common runtime/container paths
+    candidates.append('/home/robonet/widowx_envs')
+    candidates.append('/home/robonet/host_src')
+
+    for p in candidates:
+        if os.path.isdir(p):
+            if p not in sys.path:
+                sys.path.insert(0, p)
+            return
+
+
+_add_widowx_envs_to_syspath()
 
 import numpy as np
 import cv2
