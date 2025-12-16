@@ -51,7 +51,7 @@ qtcreator-*
 CATKIN_IGNORE
 
 .DS_Store
-*.jpg
+#*.jpg
 
 # Node packages for site
 node_modules/
