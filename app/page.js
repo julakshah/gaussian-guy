@@ -1,9 +1,10 @@
 export default function Home() {
 return (
 <section className="hero">
-<h1>Project Overview</h1>
+<h1>Gaussian Guy</h1>
 <p>
-A minimal, black-and-white project website built with Next.js and MDX.
+
+        A project that uses a robot and and guassian splat to scan an object
 </p>
 </section>
 )
