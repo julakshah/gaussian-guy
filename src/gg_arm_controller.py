@@ -62,8 +62,8 @@ class arm_controller():
 
             x_radius = min(0.15, center_pos[0]-min_x)
             y_radius = x_radius*1.3
-            x_height = 0.100
-            y_height = 0.025
+            x_height = 0.110
+            y_height = 0.015
             yaw = 0.9
 
             angles = np.concatenate(
@@ -109,8 +109,8 @@ class arm_controller():
     def trajectory_move(self):
         self.last_objective = self.trajectory.pop(0)
         self.client.move(np.array(self.last_objective),
-                         blocking=True, duration=1)
-        time.sleep(1)
+                         blocking=True, duration=0.75)
+        time.sleep(1.5)
         self.reached_objective = True
         if len(self.trajectory) == 0:
             self.has_objective = False

@@ -56,21 +56,21 @@ class camera_controller():
         """Main loop - keep ROS spinning to receive depth and RGB frames"""
         print("Starting camera loop...")
         while not rospy.is_shutdown():
-            # depth = self.get_depth()
-            # rgb = self.get_rgb()
+            depth = self.get_depth()
+            rgb = self.get_rgb()
 
-            # if depth is not None:
-            #     depth_colormap = cv2.applyColorMap(
-            #         cv2.convertScaleAbs(depth, alpha=0.03),
-            #         cv2.COLORMAP_JET
-            #     )
-            #     cv2.imshow("Depth View", depth_colormap)
+            if depth is not None:
+                depth_colormap = cv2.applyColorMap(
+                    cv2.convertScaleAbs(depth, alpha=0.03),
+                    cv2.COLORMAP_JET
+                )
+                cv2.imshow("Depth View", depth_colormap)
 
-            # if rgb is not None:
-            #     cv2.imshow("RGB View", rgb)
+            if rgb is not None:
+                cv2.imshow("RGB View", rgb)
 
-            #     if cv2.waitKey(1) & 0xFF == 27:
-            #         break
+                if cv2.waitKey(1) & 0xFF == 27:
+                    break
 
             rospy.sleep(0.01)
 

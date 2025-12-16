@@ -56,9 +56,12 @@ def main():
     # Add circle path to trajectory list
     controller.circle_path([0.275, 0])
 
+
     # Start movement based on trajectory list
     arm_thread = threading.Thread(target=controller.loop_wrapper)
     arm_thread.start()
+
+    
 
     positions = []
     frames = []
@@ -69,7 +72,7 @@ def main():
         if (controller.reached_objective):
             controller.destinations_reached += 1
             print(f"Objective {controller.destinations_reached} reached")
-            time.sleep(3)
+            time.sleep(0.5)
 
             image = camera.get_rgb()
             #image_depth = camera.get_depth()
