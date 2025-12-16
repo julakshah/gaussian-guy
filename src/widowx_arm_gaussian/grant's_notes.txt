@@ -4,10 +4,9 @@
 
 
 STEP 1:
-run this in bridge_data_robot-main
+run this in bridge_data_robot_main
 """
 ./generate_usb_config.sh
-
 USB_CONNECTOR_CHART=$(pwd)/usb_connector_chart.yml docker compose up --build robonet
 """
 
@@ -35,7 +34,7 @@ docker compose exec robonet bash
 STEP 4:
 run test code with
 """
-bash -lic "python3 /home/robonet/widowx_envs/widowx_envs/gg_test.py"
+bash -lic "python3 /home/robonet/host_src/gg_test.py"
 """
 
 """

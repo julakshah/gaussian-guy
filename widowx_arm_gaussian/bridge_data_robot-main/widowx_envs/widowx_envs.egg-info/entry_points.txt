@@ -1,0 +1,2 @@
+[console_scripts]
+widowx_env_service = widowx_envs.widowx_env_service:main

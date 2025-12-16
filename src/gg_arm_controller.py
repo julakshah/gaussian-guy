@@ -1,11 +1,20 @@
 #!/usr/bin/env python3
 
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'widowx_arm_gaussian/bridge_data_robot-main/widowx_envs/widowx_envs'))
+# When running in container, also add the container's widowx_envs package location
+if os.path.exists('/home/robonet/widowx_envs'):
+    sys.path.insert(0, '/home/robonet/widowx_envs')
+
 import threading
 import argparse
 import numpy as np
 import math
 import time
-from widowx_envs.widowx_env_service import WidowXClient, WidowXConfigs, WidowXStatus
+import importlib  
+
+from widowx_env_service import WidowXClient, WidowXConfigs, WidowXStatus
 
 
 class arm_controller():
