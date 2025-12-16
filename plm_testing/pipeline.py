@@ -30,9 +30,10 @@ from plm_testing.A_Star_octree import go_to_goal, find_unknown_leaves
 from plm_testing.Octree import OctreeNode
 
 octree = OctreeNode(position=(0,0,0), r=0.8, min_r=0.02)
-unknowns_remain = True
-while unknowns_remain:
+unknown_nodes_remain = True
+while unknown_nodes_remain:
     # -> call camera API to get image
+    # -> call camera API to save image
     point_cloud = open3d.geometry.create_point_cloud_from_rgbd_image(image, intrinsics, extrinsic) # does extrinsics send it to world frame?
     camera_pose = # -> get_camera_pose()
     point_cloud.transform(camera_pose)
@@ -42,7 +43,7 @@ while unknowns_remain:
     for point in down_point_cloud.points:
         tupled_point = tuple(point)
         # filter out table points
-        if tupled_point[2] < 0.01:
+        if (tupled_point[0] < 0.13) or (tupled_point[0] > 0.43) or (tupled_point[1] < -0.2) or (tupled_point[1] > 0.2) or (tupled_point[2] < 0.01) or (tupled_point[2] > 0.3):
             continue
         
         octree.insert_obstacle(tupled_point)
@@ -51,10 +52,13 @@ while unknowns_remain:
 
     path = go_to_goal(octree, start_pos)
     for waypoint in path:
-        # -> move_to(waypoint)
+        # waypoint_with_roll_pitch_yaw = add in way to modify waypoint to have rpy
+        # -> move_to(waypoint_with_roll_pitch_yaw)
         pass
+
+    # Are there more places to go?
     unknown_leaves = []
-    find_unknown_leaves(octree, unknown_leaves)
+    find_unknown_leaves(octree, unknown_leaves) ## I should fix this with a return or faster *Break* condition as soon as an unknown is found
     if not unknown_leaves:
         unknowns_remain = False
 
