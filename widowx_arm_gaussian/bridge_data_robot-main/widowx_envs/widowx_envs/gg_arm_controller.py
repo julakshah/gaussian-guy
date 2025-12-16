@@ -55,7 +55,6 @@ class arm_controller():
             y_radius = x_radius*1.3
             x_height = 0.100
             y_height = 0.025
-            droop = 0.025
             yaw = 0.9
 
             angles = np.concatenate(

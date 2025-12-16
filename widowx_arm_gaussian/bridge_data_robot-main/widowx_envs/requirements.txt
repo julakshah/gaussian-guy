@@ -31,3 +31,4 @@ chess
 apriltag
 shapely
 pyrealsense2
+open3d

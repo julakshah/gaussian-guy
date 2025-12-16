@@ -4,58 +4,101 @@ import threading
 import cv2
 import numpy as np
 import os
-import math
 import shutil
 import time
 import rospy
 from widowx_envs.widowx_env_service import WidowXClient, WidowXConfigs, WidowXStatus
 from gg_arm_controller import arm_controller
 from gg_camera_controller import camera_controller
+from gg_a_star_octree import go_to_goal, find_unknown_leaves
+from gg_octree import OctreeNode
+import open3d
+
 
 
 def main():
-    rospy.init_node('test_node', anonymous=True)
+    rospy.init_node('main_node', anonymous=True)
 
+    # Initialize Camera before anything else
     camera = camera_controller()
-
     camera_thread = threading.Thread(target=camera.loop_wrapper)
     camera_thread.daemon = True
     camera_thread.start()
 
+    # Initialize Arm -> Go to initial scan position
     controller = arm_controller()
-
     while (controller.scan_position_reached != True):
-        print("while loop")
-        time.sleep(0.5)
+        time.sleep(0.1)
 
     print("Scan Position Reached (controller)")
 
-    time.sleep(5)
+    time.sleep(1)
+    # Find center point code here
 
+    # Add circle path to trajectory list
     controller.reset_arm()
     controller.circle_path([0.275, 0])
 
+    # Start movement based on trajectory list
     arm_thread = threading.Thread(target=controller.loop_wrapper)
     arm_thread.start()
 
     positions = []
     frames = []
 
+    # While full rotation isn't complete, waits for each point to be reached
+    #   stores the position and image at that point and tells arm to continue
     while (controller.has_objective):
-        try:
-            if (controller.reached_objective):
-                controller.destinations_reached += 1
-                print(f"Objective {controller.destinations_reached} reached")
-                time.sleep(0.25)
-                positions.append(controller.last_objective)
-                frames.append(camera.get_rgb())
-                time.sleep(0.25)
-                controller.next()
-        except KeyboardInterrupt:
-            print("\nShutting down...")
-            break
+        if (controller.reached_objective):
+            controller.destinations_reached += 1
+            print(f"Objective {controller.destinations_reached} reached")
+            time.sleep(0.25)
+            positions.append(controller.last_objective)
+            frames.append(camera.get_rgb())
+            time.sleep(0.25)
+            controller.next()
 
-    # A star shit
+    # Go to reset position (0.3, 0.0, 0.15, 0, 0, 0)
+    controller.reset_arm()
+
+    octree = OctreeNode(position=(0.3,0,0.15), r=0.15, min_r=0.01)      
+    unknowns_remain = True
+
+    while unknowns_remain:
+
+        # -> call camera API to get image
+
+        point_cloud = open3d.geometry.create_point_cloud_from_rgbd_image(image, intrinsics, extrinsic) # does extrinsics send it to world frame?
+        camera_pose = controller.last_objective
+        point_cloud.transform(camera_pose)
+        down_point_cloud = point_cloud.voxel_down_sample(voxel_size=0.005)
+        start_pos = camera_pose[0:3]
+
+        for point in down_point_cloud.points:
+            tupled_point = tuple(point)
+            # filter out table points
+            if (tupled_point[0] < 0.13) or (tupled_point[0] > 0.43) or (tupled_point[1] < -0.2) or (tupled_point[1] > 0.2) or (tupled_point[2] < 0.01) or (tupled_point[2] > 0.3):
+                continue
+            
+            octree.insert_obstacle(tupled_point)
+            ## raycast to update with empties
+            octree.raycast(start_pos, tupled_point)
+
+        path = go_to_goal(octree, start_pos)
+        for waypoint in path:
+            controller.add_to_trajectory(np.concatenate(waypoint,[0,1.5,0]))
+
+        while(controller.has_objective()):
+            time.sleep(0.1)
+
+        # get camera frame
+        
+        unknown_leaves = []
+        find_unknown_leaves(octree, unknown_leaves)
+        if not unknown_leaves:
+            unknowns_remain = False
+
+    print("Object scanned")
 
     # Save frames in folder
     frames_dir = os.path.join(os.path.dirname(__file__), 'frames')
@@ -76,51 +119,6 @@ def main():
 
     # shutdown
     controller.shutdown()
-    # rospy.signal_shutdown()
-
-# def find_pickup_droop(pickup_point):
-#     a = distance_from_zero_zero(pickup_point)
-#     droop = -2.35E-03 + 0.0522*a + -0.216*a**2
-#     return droop
-
-
-# def find_placing_droop(pickup_point, place_point):
-#     pickup_disp = distance_from_zero_zero(pickup_point)
-#     place_disp = distance_from_zero_zero(place_point)
-#     xy_increase = place_disp - pickup_disp
-#     return (pickup_disp - max(place_disp, 0.2)) * -0.0529
-
-
-# def distance_from_zero_zero(point):
-#     """
-#     Calculate the distance between [0, 0] and another point [x, y2.
-
-#     Args:
-#         point (list or tuple): Coordinates of the point [x, y].
-
-#     Returns:
-#         float: Distance between [0, 0] and the input point.
-#     """
-#     x, y = point
-#     distance = math.sqrt(x**2+y**2)
-#     return distance
-
-
-# def distance_between_points(point1, point2):
-#     """
-#     Calculate the distance between two points in a 2D plane.
-
-#     Args:
-#         point1 (list or tuple): Coordinates of the first point [x1, y1].
-#         point2 (list or tuple): Coordinates of the second point [x2, y2].
-
-#     Returns:
-#         float: Distance between the two points.
-#     """
-#     x1, y1 = point1
-#     x2, y2 = point2
-#     distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-#     return distance
 
 
 if __name__ == "__main__":
