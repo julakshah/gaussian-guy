@@ -40,9 +40,14 @@ while unknowns_remain:
     start_pos = # -> get_robot_position() -> controller.last_objective <- is the actual call
 
     for point in down_point_cloud.points:
-        octree.insert_obstacle(tuple(point))
+        tupled_point = tuple(point)
+        # filter out table points
+        if tupled_point(2) < 0.025:
+            continue
+        
+        octree.insert_obstacle(tupled_point)
         ## raycast to update with empties
-        octree.raycast(start_pos, tuple(point))
+        octree.raycast(start_pos, tupled_point)
 
     path = go_to_goal(octree, start_pos)
     for waypoint in path:

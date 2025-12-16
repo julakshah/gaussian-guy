@@ -15,8 +15,12 @@ START_POSITION = (-18, -18, -18)  # Starting position for robot
 WORLD_BOUNDS = 200.0             # +/- bounds of the world
 
 # Sensor Parameters
-SENSOR_RANGE = 50.0             # Maximum detection range of sensor
-# MAX_LEAF_SIZE = 1.0             # Maximum leaf size when updating map
+SENSOR_RANGE = 10.0             # D435 Reliable range is approx 10m
+SENSOR_MIN_RANGE = 0.3          # Blind spot within 30cm
+CAMERA_FOV_H = 87.0             # Horizontal FOV
+CAMERA_FOV_V = 58.0             # Vertical FOV
+CAMERA_RES_H = 40               # horizontal resolution
+CAMERA_RES_V = 27               # vertical resolution
 
 # Initial Exploration
 INIT_RADIUS = 10.0              # Radius of the starting circular scan
