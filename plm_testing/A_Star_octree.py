@@ -25,11 +25,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from Octree import OctreeNode
 import random
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-import time
 
 #### LLM
-SAFETY_MARGIN = 0.5
+SAFETY_MARGIN = 0.02
 
 def calculate_h(position, dest):
     h = np.sqrt((position[0] - dest[0])**2 + (position[1] - dest[1])**2 + (position[2] - dest[2])**2)
@@ -123,7 +121,7 @@ def closest_unknown(root: OctreeNode, start_pos: Tuple[float, float, float]) -> 
 
 def go_to_goal(root: OctreeNode, start_pos: Tuple[float, float, float]) -> List[Tuple[int, int]]:
     """Plan path to goal using A*"""
-    standoff_distance = 2.5
+    standoff_distance = 0.08
 
     unknown_pos = closest_unknown(root, start_pos)
 
@@ -180,35 +178,35 @@ def visualize_path(root: OctreeNode, path: List[OctreeNode]):
 
 
 if __name__ == "__main__":
-    root = OctreeNode(position=(0,0,0), r=20)
+    root = OctreeNode(position=(0,0,0), r=0.8)
 
     # Add obstacles
     for _ in range(15):
-        obs = (random.uniform(-20,20), random.uniform(-20,20), random.uniform(-20,20))
+        obs = (random.uniform(-0.5,0.5), random.uniform(-0.5,0.5), random.uniform(-0.5,0.5))
         root.insert_obstacle(obs)
 
     #### LLM
     # Wall 1: A vertical barrier at X=0 (Blocks the direct center)
     # Spans Y: -10 to 10, Z: -10 to 10
-    for y in range(-10, 11):
-        for z in range(-10, 11):
+    for y in np.arange(-0.4, 0.4, 0.04): # 0.04 is the step size (4cm)
+        for z in np.arange(-0.4, 0.4, 0.04):
             root.insert_obstacle((0, y, z))
 
     # Wall 2: A floor/ceiling plate at Z=-5 (Forces the robot to go up)
     # Spans X: -10 to 10, Y: -10 to 10
-    for x in range(-10, 11):
-        for y in range(-10, 11):
+    for x in np.arange(-0.4, 0.4):
+        for y in np.arange(-0.4, 0.4):
             root.insert_obstacle((x, y, -5))
 
     # Wall 3: A side barrier at Y=8 (Narrowing the path near the goal)
     # Spans X: 5 to 15, Z: 5 to 15
-    for x in range(5, 16):
-        for z in range(5, 16):
+    for x in np.arange(5, 16):
+        for z in np.arange(5, 16):
             root.insert_obstacle((x, 8, z))
     ####
 
-    start_pos = (-15, -15, -15)
-    goal_pos = (15, 15, 15)
+    start_pos = (-0.4, -0.4, -0.4)
+    goal_pos = (0.4, 0.4, 0.4)
 
     path = find_path(start_pos, goal_pos, root)
     if path:

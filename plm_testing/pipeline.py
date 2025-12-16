@@ -29,20 +29,20 @@ import open3d
 from plm_testing.A_Star_octree import go_to_goal, find_unknown_leaves
 from plm_testing.Octree import OctreeNode
 
-octree = OctreeNode(position=(0,0,0), r=16, min_r=0.5)
+octree = OctreeNode(position=(0,0,0), r=0.8, min_r=0.02)
 unknowns_remain = True
 while unknowns_remain:
     # -> call camera API to get image
     point_cloud = open3d.geometry.create_point_cloud_from_rgbd_image(image, intrinsics, extrinsic) # does extrinsics send it to world frame?
     camera_pose = # -> get_camera_pose()
     point_cloud.transform(camera_pose)
-    down_point_cloud = point_cloud.voxel_down_sample(voxel_size=2.0)
+    down_point_cloud = point_cloud.voxel_down_sample(voxel_size=0.005)
     start_pos = # -> get_robot_position() -> controller.last_objective <- is the actual call
 
     for point in down_point_cloud.points:
         tupled_point = tuple(point)
         # filter out table points
-        if tupled_point(2) < 0.025:
+        if tupled_point[2] < 0.01:
             continue
         
         octree.insert_obstacle(tupled_point)

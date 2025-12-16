@@ -10,7 +10,7 @@ class OctreeNode:
 
     status: 'unknown', 'empty', 'occupied'
     """
-    def __init__(self, position, r=20, parent=None, min_r=1.0,):
+    def __init__(self, position, r=1, parent=None, min_r=0.02,):
         self.position = position    # (x, y, z)
         self.r = r  # radius
         self.status = 'unknown'
@@ -288,12 +288,12 @@ class OctreeNode:
 
 # Example usage
 if __name__ == "__main__":
-    root = OctreeNode(position=(0,0,0), r=20)
+    root = OctreeNode(position=(0,0,0), r=1)
 
     # Insert some obstacles
     obstacles = []
     for i in range(10):
-        obstacle = (random.uniform(-20,20), random.uniform(-20,20), random.uniform(-20,20))
+        obstacle = (random.uniform(-1,1), random.uniform(-1,1), random.uniform(-1,1))
         obstacles.append(obstacle)
 
     for obs in obstacles:
