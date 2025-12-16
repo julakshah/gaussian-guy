@@ -32,7 +32,7 @@ TBD
 TBD
 
 #### src
-`src` contains all the python files used for the project with a couple exceptions such as the `calib_camera.py` file. Within `src` are the files used for general control (`run_arm.py`), our manipulation of the arm (`arm_controller.py`), collection of data from the realsense camera (`camera_controller.py`), adaptive path finding (`octree.py`, `pipeline.py`, `a_start_octree.py`), video processing (`process_video.py`), and gaussian processing (`process_gaussians.py`, `metrics.py`).
+`src` contains all the python files used for the project with a couple exceptions such as the `calib_camera.py` file. Within `src` are the files used for general control (`run_arm.py`, `run_arm_just_circle.py`), our manipulation of the arm (`arm_controller.py`), collection of data from the realsense camera (`camera_controller.py`), adaptive path finding (`octree.py`, `pipeline.py`, `a_start_octree.py`), video processing (`process_video.py`), and gaussian processing (`process_gaussians.py`, `metrics.py`).
 
 #### widowx_arm
 `widowx_arm` contains the files needed to communicate with the Trossen WidowX robot arm and realsense camera. These have been adapted from [Chess Bot](https://github.com/eddydpan/chess_bot), the previous CompRobo final mentioned previously, which adapted the files from [Bridge Data Robot](https://github.com/rail-berkeley/bridge_data_robot), a project by PhD students at UC Berkley.
@@ -68,7 +68,7 @@ docker compose exec robonet bash
 STEP 4:
 ```bash
 # run this within the docker container created by the previous step
-bash -lic "python3 /home/robonet/host_src/run_arm.py"
+bash -lic "python3 /home/robonet/host_src/src/run_arm_just_circle.py"
 ```
 
 This should result in the the head of the arm orbiting the the point 27.5 centimeters forward from the center of the arm's base. Once this loop has been complete, the `images` folder will be cleared and the new images will be saved.

@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+import importlib
+import time
+import math
+import numpy as np
+import argparse
+import threading
 import sys
 import os
 
@@ -11,11 +17,13 @@ import os
 
 def _add_widowx_envs_to_syspath():
     candidates = []
-    candidates.append(os.path.join(os.path.dirname(__file__), 'widowx_arm', 'bridge_data_robot-main', 'widowx_envs', 'widowx_envs'))
-    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-    candidates.append(os.path.join(repo_root, 'widowx_arm', 'bridge_data_robot-main', 'widowx_envs', 'widowx_envs'))
+    candidates.append(os.path.join(os.path.dirname(
+        __file__), 'widowx_arm', 'bridge_data_robot-main', 'widowx_envs', 'widowx_envs'))
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    candidates.append(os.path.join(repo_root, 'widowx_arm',
+                      'bridge_data_robot-main', 'widowx_envs', 'widowx_envs'))
     candidates.append('/home/robonet/widowx_envs')
-    candidates.append('/home/robonet/host_src')
+    candidates.append('/home/robonet/host_src/src')
 
     for p in candidates:
         if os.path.isdir(p):
@@ -25,14 +33,6 @@ def _add_widowx_envs_to_syspath():
 
 
 _add_widowx_envs_to_syspath()
-
-import threading
-import argparse
-import numpy as np
-import math
-import time
-import importlib  
-
 from widowx_env_service import WidowXClient, WidowXConfigs, WidowXStatus
 
 
@@ -48,7 +48,7 @@ class arm_controller():
         self.reached_objective = False
 
         self.destinations_reached = 0
-        self.last_objective = [0,0,0,0,0,0]
+        self.last_objective = [0, 0, 0, 0, 0, 0]
 
         self.trajectory = []
 
@@ -67,10 +67,14 @@ class arm_controller():
         self.client.reset()
 
     def initial_scan(self):
-        self.client.move(np.array([0.2, 0, 0.3, 0, 1.5, 0]), blocking=True, duration=1)
-        self.client.move(np.array([0.15, 0, 0.4, 0, 1.5, 0]), blocking=True, duration=1)
-        self.client.move(np.array([0.25, 0, 0.4, 0, 0.5, 0]), blocking=True, duration=1)
-        self.client.move(np.array([0.10, 0, 0.525, 0, 5.8, 0]), blocking=True, duration=1)
+        self.client.move(
+            np.array([0.2, 0, 0.3, 0, 1.5, 0]), blocking=True, duration=1)
+        self.client.move(
+            np.array([0.15, 0, 0.4, 0, 1.5, 0]), blocking=True, duration=1)
+        self.client.move(
+            np.array([0.25, 0, 0.4, 0, 0.5, 0]), blocking=True, duration=1)
+        self.client.move(
+            np.array([0.10, 0, 0.525, 0, 5.8, 0]), blocking=True, duration=1)
         self.scan_position_reached = True
         print("Scan Position Reached (controller)")
 
@@ -87,14 +91,16 @@ class arm_controller():
 
             angles = np.concatenate(
                 [np.linspace(0, 2*np.pi, 72)[36:72], np.linspace(0, 2*np.pi, 72)[0:36]])
-            
+
             xs = np.array(x_radius*np.cos(angles)) + center_pos[0]
             ys = -np.array(y_radius*np.sin(angles)) + center_pos[1]
             rolls = np.array(angles)
             heights = np.array(x_height*abs(np.cos(angles))) + y_height
-            pitches = -np.array(yaw*(np.cos(angles))) + 1.5 # * abs(np.cos(angles))
+            pitches = -np.array(yaw*(np.cos(angles))) + \
+                1.5  # * abs(np.cos(angles))
 
-            droop_assist = np.array([find_pickup_droop([xs[i],ys[i]]) for i in range(72)])
+            droop_assist = np.array(
+                [find_pickup_droop([xs[i], ys[i]]) for i in range(72)])
 
             for i in range(72):
                 self.trajectory.append(np.array(
@@ -129,7 +135,7 @@ class arm_controller():
         self.last_objective = self.trajectory.pop(0)
         self.client.move(np.array(self.last_objective),
                          blocking=True, duration=0.75)
-        time.sleep(1.5)
+        # time.sleep(1.5)
         self.reached_objective = True
         if len(self.trajectory) == 0:
             self.has_objective = False

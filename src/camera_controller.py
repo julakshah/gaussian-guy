@@ -1,5 +1,12 @@
+from cv_bridge import CvBridge
+from sensor_msgs.msg import Image
+import rospy
+import threading
+import cv2
+import numpy as np
 import sys
 import os
+
 
 def _add_widowx_envs_to_syspath():
     """Try several likely locations for the `widowx_envs/widowx_envs` package
@@ -8,13 +15,15 @@ def _add_widowx_envs_to_syspath():
     """
     candidates = []
     # old relative layout (when widowx_arm lived next to this file)
-    candidates.append(os.path.join(os.path.dirname(__file__), 'widowx_arm', 'bridge_data_robot-main', 'widowx_envs', 'widowx_envs'))
+    candidates.append(os.path.join(os.path.dirname(
+        __file__), 'widowx_arm', 'bridge_data_robot-main', 'widowx_envs', 'widowx_envs'))
     # repo-root layout: file is in repo/src, widowx is at repo/widowx_arm
-    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-    candidates.append(os.path.join(repo_root, 'widowx_arm', 'bridge_data_robot-main', 'widowx_envs', 'widowx_envs'))
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    candidates.append(os.path.join(repo_root, 'widowx_arm',
+                      'bridge_data_robot-main', 'widowx_envs', 'widowx_envs'))
     # common runtime/container paths
     candidates.append('/home/robonet/widowx_envs')
-    candidates.append('/home/robonet/host_src')
+    candidates.append('/home/robonet/host_src/src')
 
     for p in candidates:
         if os.path.isdir(p):
@@ -24,13 +33,6 @@ def _add_widowx_envs_to_syspath():
 
 
 _add_widowx_envs_to_syspath()
-
-import numpy as np
-import cv2
-import threading
-import rospy
-from sensor_msgs.msg import Image
-from cv_bridge import CvBridge
 
 
 class camera_controller():
