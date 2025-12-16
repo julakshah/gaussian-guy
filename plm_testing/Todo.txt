@@ -18,10 +18,13 @@ Pipeline--
     Should just be Move it? Ask Grant
 5. Return to overview/sleep
 
-
+FINAL
+1. Is changing from integars to floats (for unit reasons) fine?
 
 
 
 EXTRA:
 1. A* -> Theta* -> Lazy Theta*
 
+
+centerpoint is from the center of the object

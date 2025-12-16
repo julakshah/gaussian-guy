@@ -5,8 +5,8 @@ import random
 from matplotlib import pyplot as plt
 import numpy as np
 
-from A_Star_octree import calculate_h, find_path, find_unknown_leaves, is_safe_node
-from Octree import OctreeNode
+from plm_testing.a_star_octree import calculate_h, find_path, find_unknown_leaves, is_safe_node
+from plm_testing.octree import OctreeNode
 
 # Config
 # Simulation Parameters

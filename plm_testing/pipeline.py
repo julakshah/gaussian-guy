@@ -26,15 +26,15 @@ Adaptive planning loop:
 
 import open3d
 
-from plm_testing.A_Star_octree import go_to_goal, find_unknown_leaves
-from plm_testing.Octree import OctreeNode
+from plm_testing.a_star_octree import go_to_goal, find_unknown_leaves
+from plm_testing.octree import OctreeNode
 
 octree = OctreeNode(position=(0,0,0), r=0.8, min_r=0.02)
 unknown_nodes_remain = True
 while unknown_nodes_remain:
     # -> call camera API to get image
     # -> call camera API to save image
-    point_cloud = open3d.geometry.create_point_cloud_from_rgbd_image(image, intrinsics, extrinsic) # does extrinsics send it to world frame?
+    point_cloud = open3d.geometry.create_point_cloud_from_rgbd_image(image, intrinsics) # does extrinsics send it to world frame?
     camera_pose = # -> get_camera_pose()
     point_cloud.transform(camera_pose)
     down_point_cloud = point_cloud.voxel_down_sample(voxel_size=0.005)
@@ -47,7 +47,9 @@ while unknown_nodes_remain:
             continue
         
         octree.insert_obstacle(tupled_point)
-        ## raycast to update with empties
+        
+    ## raycast to update with empties
+    for point in set_of_points:
         octree.raycast(start_pos, tupled_point)
 
     path = go_to_goal(octree, start_pos)

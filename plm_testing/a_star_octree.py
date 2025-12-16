@@ -23,12 +23,13 @@ import heapq
 from typing import Dict, List, Tuple
 import numpy as np
 import matplotlib.pyplot as plt
-from Octree import OctreeNode
+from plm_testing.octree import OctreeNode
 import random
 
 #### LLM
 SAFETY_MARGIN = 0.02
 
+# Functions
 def calculate_h(position, dest):
     h = np.sqrt((position[0] - dest[0])**2 + (position[1] - dest[1])**2 + (position[2] - dest[2])**2)
     return float(h)
@@ -62,7 +63,7 @@ def is_safe_node(node: OctreeNode, root: OctreeNode, safety_margin: float = SAFE
     
     return True
 
-def find_path(start, goal, root: OctreeNode) -> List[Tuple[int, int]]:
+def find_path(root: OctreeNode, start, goal) -> List[OctreeNode]:
     """
     A* algorithm
     """
@@ -105,7 +106,6 @@ def find_path(start, goal, root: OctreeNode) -> List[Tuple[int, int]]:
                 
                 step_count += 1
                 heapq.heappush(queue, (f_score[neighbor], step_count, neighbor))
-        
     return []
 
 def closest_unknown(root: OctreeNode, start_pos: Tuple[float, float, float]) -> Tuple[float, float, float]:
@@ -123,29 +123,35 @@ def go_to_goal(root: OctreeNode, start_pos: Tuple[float, float, float]) -> List[
     """Plan path to goal using A*"""
     standoff_distance = 0.08
 
-    unknown_pos = closest_unknown(root, start_pos)
+    while True:
+        unknown_pos = closest_unknown(root, start_pos)
 
-    if unknown_pos is None:
-        return []
-    
-    start_arr = np.array(start_pos)
-    unknown_arr = np.array(unknown_pos)
+        if unknown_pos is None:
+            return []
+        
+        start_arr = np.array(start_pos)
+        unknown_arr = np.array(unknown_pos)
 
-    direction = start_arr - unknown_arr
+        direction = start_arr - unknown_arr
 
-    # Calculate distance
-    dist = np.linalg.norm(direction)
+        # Calculate distance
+        dist = np.linalg.norm(direction)
 
-    if dist < 1e-6:
-        # Default to backing up in Z+ direction (or any safe default)
-        normalized_dir = np.array([0, 0, 1])
-    else:
-        normalized_dir = direction / dist
+        if dist < 1e-6:
+            # Default to backing up in Z+ direction (or any safe default)
+            normalized_dir = np.array([0, 0, 1])
+        else:
+            normalized_dir = direction / dist
 
-    goal_pos = tuple(unknown_arr + (normalized_dir * standoff_distance))
+        goal_pos = tuple(unknown_arr + (normalized_dir * standoff_distance))
 
-    path = find_path(start_pos, goal_pos, root)
-    return path
+        path = find_path(root, start_pos, goal_pos)
+        if path:
+            return path
+        
+        # Failure case. Assumes an unreachable node is surrounded by occupied and thus for snaccing purposes, also occupied
+        root.update_cell(unknown_pos, is_occupied=True)
+
 
 def find_unknown_leaves(node: OctreeNode, unknown_leaves: list):
     # If leaf node
@@ -178,7 +184,7 @@ def visualize_path(root: OctreeNode, path: List[OctreeNode]):
 
 
 if __name__ == "__main__":
-    root = OctreeNode(position=(0,0,0), r=0.8)
+    root = OctreeNode(position=(0,0,0), radius=0.8, min_radius=0.02)
 
     # Add obstacles
     for _ in range(15):
@@ -208,7 +214,7 @@ if __name__ == "__main__":
     start_pos = (-0.4, -0.4, -0.4)
     goal_pos = (0.4, 0.4, 0.4)
 
-    path = find_path(start_pos, goal_pos, root)
+    path = find_path(root, start_pos, goal_pos)
     if path:
         print(f"Found path with {len(path)} nodes")
         visualize_path(root, path)

@@ -1,31 +1,54 @@
 """Mess around with math and code to figure out Octrees"""
+import random
 
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-import random
 
 class OctreeNode:
     """
-    Octree
+    Custom Octree node with an assigned status. 
 
-    status: 'unknown', 'empty', 'occupied'
+    Attributes:
+        position: Center of node in (x, y, z) (world frame)
+        radius: Closest distance from position to any face
+        status:
+            One of {'unknown', 'empty', 'occupied', 'container'}.
+
+            - 'unknown':
+                Space has not been observed yet.
+
+            - 'empty':
+                Space has been observed and confirmed free.
+
+            - 'occupied':
+                Space contains a solid obstacle.
+
+            - 'container':
+                Internal node that has been subdivided into children.
+                The node itself does not represent a single voxel;
+                its children hold the actual occupancy information.
+        parent: Reference to the parent OctreeNode (container) or none if root
+        children: List of 8 child OctreeNodes or None if leaf
+        min_r: Minimum radius before stopping subdivision
+
     """
-    def __init__(self, position, r=1, parent=None, min_r=0.02,):
+    def __init__(self, position, radius=1, parent=None, min_r=0.02):
         self.position = position    # (x, y, z)
-        self.r = r  # radius
+        self.radius = radius  # radius
         self.status = 'unknown'
         self.parent = parent
         self.children = [None] * 8  # Child nodes
         self.min_r = min_r
 
     def splitting(self):
-        """Split node into smaller nodes"""
+        """Subdivides self (OctreeNode) into 8 equal-sized child nodes. Changes the node's status to 'container'.
+        """        
         # Check if already split or minimum size
-        if (self.children[0] is not None) or (self.r/2 < self.min_r):
+        if (self.children[0] is not None) or (self.radius / 2 < self.min_r):
             return
         
         # Values for child nodes
-        new_r = self.r / 2
+        new_r = self.radius / 2
 
         child_positions = [] # positives are right, up, front
         for xi in (-1, 1):
@@ -37,18 +60,24 @@ class OctreeNode:
         # Create child nodes
         for i, pos in enumerate(child_positions):
             self.children[i] = OctreeNode(
-                position= (
+                position=(
                     self.position[0] + pos[0] * new_r,
                     self.position[1] + pos[1] * new_r,
                     self.position[2] + pos[2] * new_r,
                 ),
-                r=new_r,
+                radius=new_r,
                 parent=self,
                 min_r=self.min_r,
             )
         self.status = 'container'
     
     def get_status(self):
+        """Determines if node is container and then returns the status of the node.
+        
+        Returns:
+            str: 'container' if the node has children, otherwise returns the status ('occupied', 
+            'empty', or 'unknown').
+        """
         # If children, container node so status is irrelevant.
         if self.children[0] is not None:
             return 'container' 
@@ -57,7 +86,10 @@ class OctreeNode:
         return self.status
     
     def prune(self):
-        """Removes unecessary child nodes to save memory"""
+        """Removes unnecessary child nodes to save memory
+        
+        If all 8 children are leaves and share the same status, they are deleted and the parent is assigned that status.
+        """
         if self.children[0] is None:
             return
             
@@ -72,13 +104,22 @@ class OctreeNode:
             self.children = [None] * 8  # Remove children
 
     def insert_obstacle(self, obstacle_pos): ### change to be "insert_entity" and pass in which type of node
-        """Updates octree to contain the given obstacle"""
+        """Recursively traverses the tree to find the leaf node containing the
+        obstacle and assign status. If the leaf is larger than min_r, it splits.
+
+        Args:
+            obstacle_pos: A tuple (x, y, z) representing the obstacle's location.
+
+        Returns:
+            bool: True if the obstacle was successfully inserted. 
+                  False if the obstacle was out of the node's bounds.
+        """        
         current_node = self
 
         # Check if obstacle in node bounds
-        if (abs(obstacle_pos[0] - self.position[0]) > self.r or
-            abs(obstacle_pos[1] - self.position[1]) > self.r or
-            abs(obstacle_pos[2] - self.position[2]) > self.r):
+        if (abs(obstacle_pos[0] - self.position[0]) > self.radius or
+            abs(obstacle_pos[1] - self.position[1]) > self.radius or
+            abs(obstacle_pos[2] - self.position[2]) > self.radius):
             return False 
 
         # Check if already occupied
@@ -122,16 +163,21 @@ class OctreeNode:
         return True
     
     def find_leaf(self, position):
-        """
-        Finds the leaf node containing the given position.
-        Returns None if out of bounds.
+        """Traverses the tree to find the specific leaf node containing a point.
+
+        Args:
+            position: A tuple (x, y, z) in world frame.
+
+        Returns:
+            OctreeNode: The leaf node containing the position.
+            None: If the position is outside the root node's bounds.
         """
         current_node = self
         
         # Check if in bounds
-        if (abs(position[0] - current_node.position[0]) > current_node.r or
-            abs(position[1] - current_node.position[1]) > current_node.r or
-            abs(position[2] - current_node.position[2]) > current_node.r):
+        if (abs(position[0] - current_node.position[0]) > current_node.radius or
+            abs(position[1] - current_node.position[1]) > current_node.radius or
+            abs(position[2] - current_node.position[2]) > current_node.radius):
             return None
 
         # Go down each child node
@@ -166,7 +212,12 @@ class OctreeNode:
         return current_node
 
     def update_cell(self, pos, is_occupied):
-        """Set a single cell as occupied or empty"""
+        """Updates the status of a specific coordinate.
+
+        Args:
+            pos: The (x, y, z) coordinate to update.
+            is_occupied: True to mark 'occupied', False to mark 'empty'.
+        """
         leaf = self.find_leaf(pos)
         if leaf is None:
             return
@@ -185,8 +236,18 @@ class OctreeNode:
             current_node.parent.prune()
             current_node = current_node.parent
 
-    def get_neighbors(self, root):
-        """Get neighboring nodes"""
+    def get_neighbors(self, root) -> list:
+        """Checks for leaf nodes adjacent to the current node.
+
+        Checks 26 discrete directions (faces, edges, corners) around the node and returns the set of nodes from those directions
+        
+        Args:
+            root (OctreeNode): The root of the tree, required to search for 
+                               neighbors that may exist in different branches.
+
+        Returns:
+            list[OctreeNode]: A list of unique adjacent leaf nodes.
+        """
         neighbors = set()
 
         directions = [] # positives are right, up, front
@@ -200,9 +261,9 @@ class OctreeNode:
             epsilon = 1e-6
 
             neighbor_pos = (
-                self.position[0] + direction[0] * (self.r + epsilon),
-                self.position[1] + direction[1] * (self.r + epsilon),
-                self.position[2] + direction[2] * (self.r + epsilon),
+                self.position[0] + direction[0] * (self.radius + epsilon),
+                self.position[1] + direction[1] * (self.radius + epsilon),
+                self.position[2] + direction[2] * (self.radius + epsilon),
             )
             neighbor_node = root.find_leaf(neighbor_pos)
             if neighbor_node:
@@ -211,7 +272,13 @@ class OctreeNode:
         return list(neighbors)
     
     def raycast(self, origin, target):
-        """Have all voxels between origin and target be marked as empty"""
+        """Uses a step-based traversal to mark all voxels along the vector from 
+        origin to target as 'empty'.
+
+        Args:
+            origin: The (x, y, z) starting point of the ray (e.g., camera position).
+            target: The (x, y, z) end point of the ray (e.g., detected obstacle).
+        """        
         diff = (
             target[0] - origin[0],
             target[1] - origin[1],
@@ -228,7 +295,7 @@ class OctreeNode:
         direction = (diff[0] / total_dist, diff[1] / total_dist, diff[2] / total_dist)
         
         # 2. Step size
-        # r/2 ensures we don't skip over any voxels (Nyquist sampling)
+        # radius/2 ensures we don't skip over any voxels (Nyquist sampling)
         step_size = self.min_r / 2 ### Change to leaf size?
         
         # 3. Loop using simple addition
@@ -257,10 +324,10 @@ class OctreeNode:
     def draw_cube(self, ax, facecolor='red', edgecolor='black', alpha=1.0): ####
         """Draws a cube at this node."""
         x, y, z = self.position
-        r = self.r
+        radius = self.radius
         corners = [
-            (x-r, y-r, z-r), (x-r, y-r, z+r), (x-r, y+r, z-r), (x-r, y+r, z+r),
-            (x+r, y-r, z-r), (x+r, y-r, z+r), (x+r, y+r, z-r), (x+r, y+r, z+r),
+            (x-radius, y-radius, z-radius), (x-radius, y-radius, z+radius), (x-radius, y+radius, z-radius), (x-radius, y+radius, z+radius),
+            (x+radius, y-radius, z-radius), (x+radius, y-radius, z+radius), (x+radius, y+radius, z-radius), (x+radius, y+radius, z+radius),
         ]
         faces = [
             [corners[i] for i in [0,1,3,2]],
@@ -273,22 +340,27 @@ class OctreeNode:
         ax.add_collection3d(Poly3DCollection(faces, facecolors=facecolor, edgecolors=edgecolor, linewidths=0.5, alpha=alpha))
 
     def draw(self, ax): ####
-        """Recursively draw the tree:
-        - Occupied nodes: solid red
-        - Container nodes: transparent wireframe
+        """Recursively draws the node and its children on a 3D plot. Renders container nodes as wireframes and occupied children nodes as red
+
+        Args:
+            ax (matplotlib.axes._subplots.Axes3DSubplot): The 3D axis to draw on.
         """
         if self.children[0] is None:
             if self.status == 'occupied':
                 self.draw_cube(ax, facecolor='red', edgecolor='black', alpha=1.0)
         else:
             # Draw container node wireframe first
-            self.draw_cube(ax, facecolor='white', edgecolor='gray', alpha=0.1)
+            self.draw_cube(
+                ax, 
+                facecolor='white', 
+                edgecolor='gray', 
+                alpha=0.1)
             for child in self.children:
                 child.draw(ax)
 
 # Example usage
 if __name__ == "__main__":
-    root = OctreeNode(position=(0,0,0), r=1)
+    root = OctreeNode(position=(0,0,0), radius=1)
 
     # Insert some obstacles
     obstacles = []
