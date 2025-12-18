@@ -1,4 +1,4 @@
 1:"$Sreact.fragment"
-2:I[39756,["/desk-on-demand/_next/static/chunks/796e69ae18b2784c.js","/desk-on-demand/_next/static/chunks/7340adf74ff47ec0.js"],"default"]
-3:I[37457,["/desk-on-demand/_next/static/chunks/796e69ae18b2784c.js","/desk-on-demand/_next/static/chunks/7340adf74ff47ec0.js"],"default"]
-0:{"buildId":"J6eYJ2Mxh7Z8yS8QVIucd","rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","template":["$","$L3",null,{}]}]]}],"loading":null,"isPartial":false}
+2:I[39756,["/gaussian-guy/_next/static/chunks/796e69ae18b2784c.js","/gaussian-guy/_next/static/chunks/7340adf74ff47ec0.js"],"default"]
+3:I[37457,["/gaussian-guy/_next/static/chunks/796e69ae18b2784c.js","/gaussian-guy/_next/static/chunks/7340adf74ff47ec0.js"],"default"]
+0:{"buildId":"z_44kA7C4vJv2yR8fJUvG","rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","template":["$","$L3",null,{}]}]]}],"loading":null,"isPartial":false}

@@ -1,5 +1,5 @@
-:HL["/desk-on-demand/_next/static/chunks/cc4d25588a8eb5c0.css","style"]
+:HL["/gaussian-guy/_next/static/chunks/cc4d25588a8eb5c0.css","style"]
 :HL["/images/estop.png","image"]
 :HL["/images/gsplat_clusters.png","image"]
 :HL["/images/gsplat_clusters_transparent.png","image"]
-0:{"buildId":"J6eYJ2Mxh7Z8yS8QVIucd","tree":{"name":"","paramType":null,"paramKey":"","hasRuntimePrefetch":false,"slots":{"children":{"name":"milestones","paramType":null,"paramKey":"milestones","hasRuntimePrefetch":false,"slots":{"children":{"name":"milestone2","paramType":null,"paramKey":"milestone2","hasRuntimePrefetch":false,"slots":{"children":{"name":"__PAGE__","paramType":null,"paramKey":"__PAGE__","hasRuntimePrefetch":false,"slots":null,"isRootLayout":false}},"isRootLayout":false}},"isRootLayout":false}},"isRootLayout":true},"staleTime":300}
+0:{"buildId":"z_44kA7C4vJv2yR8fJUvG","tree":{"name":"","paramType":null,"paramKey":"","hasRuntimePrefetch":false,"slots":{"children":{"name":"milestones","paramType":null,"paramKey":"milestones","hasRuntimePrefetch":false,"slots":{"children":{"name":"milestone2","paramType":null,"paramKey":"milestone2","hasRuntimePrefetch":false,"slots":{"children":{"name":"__PAGE__","paramType":null,"paramKey":"__PAGE__","hasRuntimePrefetch":false,"slots":null,"isRootLayout":false}},"isRootLayout":false}},"isRootLayout":false}},"isRootLayout":true},"staleTime":300}
