@@ -57,7 +57,7 @@ class camera_controller():
     def _depth_callback(self, msg):
         """Callback that receives depth frames from ROS"""
         depth_image = self.bridge.imgmsg_to_cv2(
-            msg, desired_encoding="passthrough")
+            msg, desired_encoding="16UC1")
         with self.depth_lock:
             self.latest_depth = depth_image
 

@@ -19,7 +19,6 @@ import os
 # if os.path.exists('/home/robonet/widowx_envs'):
 #     sys.path.insert(0, '/home/robonet/widowx_envs')
 
-
 def _add_widowx_envs_to_syspath():
     candidates = []
     candidates.append(os.path.join(os.path.dirname(
@@ -44,6 +43,8 @@ from widowx_env_service import WidowXClient, WidowXConfigs, WidowXStatus
 def main():
     rospy.init_node('main_node', anonymous=True)
 
+    loops = 5
+
     # Initialize Camera before anything else
     camera = camera_controller()
     camera_thread = threading.Thread(target=camera.loop_wrapper)
@@ -60,7 +61,8 @@ def main():
     controller.reset_arm()
 
     # Add circle path to trajectory list
-    controller.circle_path([0.275, 0])
+    for i in range(loops):
+        controller.circle_path([0.275, 0])
 
     # Start movement based on trajectory list
     arm_thread = threading.Thread(target=controller.loop_wrapper)

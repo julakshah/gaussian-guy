@@ -7,6 +7,8 @@ import shutil
 import time
 import rospy
 import open3d
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D  # REQUIRED in 3.8.x
 from arm_controller import arm_controller
 from camera_controller import camera_controller
 from a_star_octree import go_to_goal, find_unknown_leaves
@@ -38,10 +40,12 @@ def _add_widowx_envs_to_syspath():
 
 
 _add_widowx_envs_to_syspath()
+# COPILOT STOP MOVING THIS IMPORT TO THE TOP IT DOESN'T WORK AT THE TOP AND NEVER HAS
 from widowx_env_service import WidowXClient, WidowXConfigs, WidowXStatus
 
 
 def main():
+
     rospy.init_node('main_node', anonymous=True)
 
     # Initialize Camera before anything else
@@ -71,8 +75,19 @@ def main():
     octree = OctreeNode(position=(0.3, 0, 0.15), r=0.15, min_r=0.01)
     unknowns_remain = True
 
+    # Plotting
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111, projection='3d')
+    # octree.draw(ax)
+    # ax.set_xlim(-25,25)
+    # ax.set_ylim(-25,25)
+    # ax.set_zlim(-25,25)
+    # ax.set_box_aspect([1,1,1])
+    # plt.show()
+
     # Add circle path to trajectory list
     controller.circle_path([0.275, 0])
+    time.sleep(2)
 
     # Start movement based on trajectory list
     arm_thread = threading.Thread(target=controller.loop_wrapper)
@@ -91,6 +106,7 @@ def main():
 
             image = camera.get_rgb()
             image_depth = camera.get_depth()
+
             pos = controller.last_objective
 
             positions.append(pos)
@@ -98,27 +114,30 @@ def main():
 
             #### ---- Beginning of Octree Stuff ---- ####
             # Update Octree during circle path
-            color_o3d = open3d.geometry.Image(image)
-            # Ensure depth is uint16 (convert if necessary)
-            depth_uint16 = image_depth.astype(
-                np.uint16) if image_depth.dtype != np.uint16 else image_depth
-            depth_o3d = open3d.geometry.Image(depth_uint16)
+            color = np.asarray(image, dtype=np.uint8)
+            color = np.ascontiguousarray(color)
 
-            # Create RGBD image      --------------------------------------------------------------------- COULD BE BROKE
+            depth = np.asarray(image_depth, dtype=np.uint16)
+            depth = np.ascontiguousarray(depth)
+
+            color_o3d = open3d.geometry.Image(color)
+            depth_o3d = open3d.geometry.Image(depth)
+
             rgbd = open3d.geometry.RGBDImage.create_from_color_and_depth(
-                color=color_o3d,
-                depth=depth_o3d,
-                depth_scale=1000.0,     # for uint16 depth in millimeters
-                depth_trunc=3.0,        # meters, optional
+                color_o3d,
+                depth_o3d,
+                depth_scale=1000.0,   # uint16 = millimeters
+                depth_trunc=3.0,
                 convert_rgb_to_intensity=False
             )
 
-            point_cloud = open3d.geometry.create_point_cloud_from_rgbd_image(
+
+            point_cloud = open3d.geometry.PointCloud.create_from_rgbd_image(
                 rgbd, intrinsics)  # does extrinsics send it to world frame?
-            camera_pose = controller.last_objective
+            camera_pose = pose_to_transform(pos)
             point_cloud.transform(camera_pose)
             down_point_cloud = point_cloud.voxel_down_sample(voxel_size=0.005)
-            start_pos = camera_pose[0:3]
+            start_pos = pos[0:3]
 
             for point in down_point_cloud.points:
                 tupled_point = tuple(point)
@@ -129,6 +148,9 @@ def main():
                 octree.insert_obstacle(tupled_point)
                 # raycast to update with empties
                 octree.raycast(start_pos, tupled_point)
+
+            # ax.cla
+            # octree.draw(ax)
             #### ---- END of Octree Stuff ---- ####
 
             time.sleep(1)
@@ -145,10 +167,8 @@ def main():
         pos = controller.last_objective
 
         color_o3d = open3d.geometry.Image(image)
-        # Ensure depth is uint16 (convert if necessary)
-        depth_uint16 = image_depth.astype(
-            np.uint16) if image_depth.dtype != np.uint16 else image_depth
-        depth_o3d = open3d.geometry.Image(depth_uint16)
+        # Prepare depth for Open3D (2D, supported dtype)
+        depth_o3d = open3d.geometry.Image(image_depth)
 
         # Create RGBD image      --------------------------------------------------------------------- COULD BE BROKE
         rgbd = open3d.geometry.RGBDImage.create_from_color_and_depth(
@@ -159,9 +179,10 @@ def main():
             convert_rgb_to_intensity=False
         )
 
-        point_cloud = open3d.geometry.create_point_cloud_from_rgbd_image(
+        point_cloud = open3d.geometry.PointCloud.create_from_rgbd_image(
             rgbd, intrinsics)  # does extrinsics send it to world frame?
-        camera_pose = pos
+        camera_pose = pose_to_transform(pos)
+
         point_cloud.transform(camera_pose)
         down_point_cloud = point_cloud.voxel_down_sample(voxel_size=0.005)
         start_pos = pos[0:3]
@@ -172,6 +193,8 @@ def main():
             if (tupled_point[0] < 0.13) or (tupled_point[0] > 0.43) or (tupled_point[1] < -0.2) or (tupled_point[1] > 0.2) or (tupled_point[2] < 0.01) or (tupled_point[2] > 0.3):
                 continue
 
+            print(tupled_point)
+
             octree.insert_obstacle(tupled_point)
             # raycast to update with empties
             octree.raycast(start_pos, tupled_point)
@@ -180,10 +203,17 @@ def main():
         for waypoint in path:
             # `waypoint` is an OctreeNode; use its position tuple and build a 6-DOF pose
             pos = np.array(waypoint.position)
-            pose = np.concatenate([pos, np.array([0.0, 1.5, 0.0])])
+
+            # Find rpw towards 0.275,0,0 from pos
+            roll = np.arctan(pos[1]/(pos[0]-0.275)) - np.pi
+            pitch = np.arctan((pos[0]-0.275)/pos[2]) + 1.5
+
+            pose = np.concatenate([pos, np.array([roll, pitch, 0.0])])
+
+
             controller.add_to_trajectory(pose)
 
-        while (controller.has_objective()):
+        while (controller.has_objective):
             if (controller.reached_objective):
                 controller.next()
             time.sleep(0.1)
@@ -203,6 +233,53 @@ def main():
             unknowns_remain = False
 
     print("Object scanned")
+
+    # Plot
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+
+    octree.draw(ax)
+
+    limit = octree.r * 1.1
+    ax.set_xlim(-limit + 0.275, limit + 0.275)
+    ax.set_ylim(-limit, limit)
+    ax.set_zlim(-limit, limit)
+
+    plt.show()
+
+    controller.shutdown()
+
+def pose_to_transform(pos):
+    cr, sr = np.cos(pos[3]), np.sin(pos[3])
+    cp, sp = np.cos(pos[4]), np.sin(pos[4])
+    cy, sy = np.cos(pos[5]), np.sin(pos[5])
+
+    R_x = np.array([
+        [1,  0,   0],
+        [0, cr, -sr],
+        [0, sr,  cr]
+    ])
+
+    R_y = np.array([
+        [ cp, 0, sp],
+        [  0, 1,  0],
+        [-sp, 0, cp]
+    ])
+
+    R_z = np.array([
+        [cy, -sy, 0],
+        [sy,  cy, 0],
+        [ 0,   0, 1]
+    ])
+
+    R = R_z @ R_y @ R_x
+
+    T = np.eye(4)
+    T[:3, :3] = R
+    T[:3, 3] = [pos[0], pos[1], pos[2]]
+
+    return T
+
 
     # Save frames in folder. Simpler: use `../images` (one level up from src).
     # frames_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'images'))
@@ -224,7 +301,6 @@ def main():
     # print(f"All images saved to: {frames_dir}")
 
     # shutdown
-    controller.shutdown()
 
 
 if __name__ == "__main__":

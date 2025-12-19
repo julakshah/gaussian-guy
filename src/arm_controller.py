@@ -57,8 +57,8 @@ class arm_controller():
         time.sleep(5)
 
         # Go to initial scan position
-        self.initial_scan()
-        time.sleep(5)
+        # self.initial_scan()
+        # time.sleep(5)
 
         self.scan_position_reached = True
 
@@ -80,6 +80,8 @@ class arm_controller():
 
     def circle_path(self, center_pos):
 
+        points = 36
+
         if center_pos[0] + 0.15 <= 0.43:
             min_x = 0.125
 
@@ -90,7 +92,7 @@ class arm_controller():
             yaw = 0.9
 
             angles = np.concatenate(
-                [np.linspace(0, 2*np.pi, 72)[36:72], np.linspace(0, 2*np.pi, 72)[0:36]])
+                [np.linspace(0, 2*np.pi, points)[int(points/2):points], np.linspace(0, 2*np.pi, points)[0:int(points/2)]])
 
             xs = np.array(x_radius*np.cos(angles)) + center_pos[0]
             ys = -np.array(y_radius*np.sin(angles)) + center_pos[1]
@@ -100,9 +102,9 @@ class arm_controller():
                 1.5  # * abs(np.cos(angles))
 
             droop_assist = np.array(
-                [find_pickup_droop([xs[i], ys[i]]) for i in range(72)])
+                [find_pickup_droop([xs[i], ys[i]]) for i in range(points)])
 
-            for i in range(72):
+            for i in range(points):
                 self.trajectory.append(np.array(
                     [xs[i], ys[i], heights[i]-droop_assist[i], rolls[i], pitches[i], 0]))
 
