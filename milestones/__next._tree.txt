@@ -3,7 +3,7 @@
 :HL["/images/colmap-test-dense.png","image"]
 :HL["/images/colmap-test-mesh.png","image"]
 :HL["/images/gsplat_20mins_test.png","image"]
-:HL["/images/estop.png","image"]
-:HL["/images/gsplat_clusters.png","image"]
-:HL["/images/gsplat_clusters_transparent.png","image"]
-0:{"buildId":"pHjHGjUFzqXG3nN5WvZt9","tree":{"name":"","paramType":null,"paramKey":"","hasRuntimePrefetch":false,"slots":{"children":{"name":"milestones","paramType":null,"paramKey":"milestones","hasRuntimePrefetch":false,"slots":{"children":{"name":"__PAGE__","paramType":null,"paramKey":"__PAGE__","hasRuntimePrefetch":false,"slots":null,"isRootLayout":false}},"isRootLayout":false}},"isRootLayout":true},"staleTime":300}
+:HL["../images/estop.png","image"]
+:HL["../images/gsplat_clusters.png","image"]
+:HL["../images/gsplat_clusters_transparent.png","image"]
+0:{"buildId":"_w4smZZUQsrUigQuV_nOK","tree":{"name":"","paramType":null,"paramKey":"","hasRuntimePrefetch":false,"slots":{"children":{"name":"milestones","paramType":null,"paramKey":"milestones","hasRuntimePrefetch":false,"slots":{"children":{"name":"__PAGE__","paramType":null,"paramKey":"__PAGE__","hasRuntimePrefetch":false,"slots":null,"isRootLayout":false}},"isRootLayout":false}},"isRootLayout":true},"staleTime":300}
