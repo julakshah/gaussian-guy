@@ -1,6 +1,6 @@
 import Arm from "./arm.mdx";
 
-export default function Arm() {
+export default function ArmPage() {
   return (
     <div className="mdx">
       <Arm />

@@ -38,14 +38,14 @@ As we're considering using a triangulated point cloud generated via visual odome
 In parallel to this, we've been ensuring that we can stitch together existing algorithms for this pipeline to evnetually do our own processing at the end. For this purpose, we have COLMAP working and generating a sparse reconstruction, dense reconstruction, and Delaunay-triangulated mesh from a sequence of images we provide. We also have Gaussian Splatting working using gsplat
 
 Here's a dense reconstruction of a test dataset using COLMAP:
-![Dense Reconstruction via COLMAP](/images/colmap-test-dense.png)
+![Dense Reconstruction via COLMAP](images/colmap-test-dense.png)
 
 We also were able to use COLMAP in generating a Delaunay-triangulated mesh from this reconstruction:
-![Mesh via COLMAP](/images/colmap-test-mesh.png)
+![Mesh via COLMAP](images/colmap-test-mesh.png)
 
 While this is visually nice o see, our end goal for the project is to have a visual reconstruction based off of Gaussian splatting or triangle splatting, which are somewhat harder to set up and take much longer to compute. However, COLMAP excels at initially generating a sparse reconstruction in relatively quick time, which we can try to use in place of or along side a home-baked SfM approach if it proves more efficient, and the sparse reconstruction is also used as the input to the Gaussian Splatting program.
 
-![20 minutes of Gaussian splatting on a laptop GPU](/images/gsplat_20mins_test.png)
+![20 minutes of Gaussian splatting on a laptop GPU](images/gsplat_20mins_test.png)
 
 While Gaussian splatting takes multiple hours on a set of a few hundred images without playing with downscaling options and such, we are able to view a work-in-progress scene created by gsplat, running for only 20 minutes on our sparse reconstruction from COLMAP. The image above depicts that, taken at approximately 2000 steps, in roughly 20 minutes of generation.
 

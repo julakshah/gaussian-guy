@@ -1,18 +1,9 @@
-import Milestone1 from "./milestone1.mdx";
-import Milestone2 from "./milestone2.mdx";
+import Setup from "./setup.mdx";
 
-export default function Milestones() {
+export default function SetupPage() {
   return (
     <div className="mdx">
-      <Milestone1 />
-      <hr
-        style={{
-          margin: "4rem 0",
-          border: "none",
-          borderTop: "1px solid #e5e5e5",
-        }}
-      />
-      <Milestone2 />
+      <Setup />
     </div>
   );
 }

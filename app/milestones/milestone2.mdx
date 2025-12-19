@@ -29,16 +29,16 @@ On the preprocessing side, we refined our video process script to allow for us t
 
 
 We also quickly tested that our splatting code works effectively on data closer to what the arm camera will record, quickly generating a decent approximation of an e-stop situated on a table:
-![E-stop splatted](/images/estop.png)
+![E-stop splatted](images/estop.png)
 
 
 We also successfully loaded the splats into Python --- they're stored as a PyTorch tensor, and we can fairly easily load them, do operations on them, convert them to or from Numpy arrays if we so desire, and so forth. We can also do any of these modifications, store the results, and visualize the processed splats.
 As we wanted to investigate the effect of running a clustering algorithm on these clusters, we ran a clustering algorithm (HDBSCAN) on a subset of our processed splats, constructing a 6D array consisting of X,Y,Z, and the R,G,B components of the first spherical harmonic color. We then identified the clusters by stripping the higher spherical harmonic colors and coloring them only according to their cluster ID:
-![Clustering of gsplats](/images/gsplat_clusters.png)
+![Clustering of gsplats](images/gsplat_clusters.png)
 
 
 Similarly, we wanted to ensure we could affect the opacity of gaussians. Opacity is encoded without bounds, and is passed through an activation function to map it to between 0 and 1. By passing it through this activation function, performing our adjustment, and reversing the activation function, we can easily modify the opacity. We demonstrated this by masking out points not identified as being part of a cluster during another clustering pass:
-![Clustering of gsplats with masking](/images/gsplat_clusters_transparent.png)
+![Clustering of gsplats with masking](images/gsplat_clusters_transparent.png)
 
 
 We're still running into issues with clustering working effectively, though we haven't yet tested on our e-stop results, which will be closer to the actual 3D scan data we'll operate on. Forcing large cluster sizes works better, but large clusters max out the RAM of the computer. We considered doing some two-stage process where we make small clusters, approximate those clusters with a few points each, and cluster those cluster means, but we haven't yet explored this or alternatives. This was also given the 30k iteration result, which has more Gaussians than the 7k iteration result. Given the performance of our splatted e-stop, which ran for only 7k iterations and took approximately 15 to 20 minutes, we may have better clustering performance on a smaller set of Gaussians, which naturally results from running gsplat for fewer iterations.

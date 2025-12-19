@@ -14,6 +14,9 @@ export default function Navbar() {
         <div className="links">
           <Link href="/">Home</Link>
           <Link href="/milestones">Milestones</Link>
+          <Link href="/setup">Project Setup</Link>
+          <Link href="/arm">Arm Movement</Link>
+          <Link href="/processing">Image Processing</Link>
         </div>
       </div>
     </nav>
