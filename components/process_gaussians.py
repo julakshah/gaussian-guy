@@ -16,7 +16,7 @@ def logit(x, eps=1e-6):
 
 if __name__ == "__main__":
     #src = "../../gsplat/examples/results/personhall_downsample/ckpts/ckpt_29999_rank0.pt"
-    src = "./results/estop_2/ckpts/ckpt_6999_rank0.pt"
+    src = "./results/splatted_new/ckpts/ckpt_6999_rank0.pt"
     dst = "./modified_gaussians.pt"
 
     checkpoint_data = torch.load(src, map_location='cpu')
@@ -76,7 +76,7 @@ if __name__ == "__main__":
         color = np.array(cmap(cmap_indices[label]/clusterer.labels_.max())[0:3])
         label_indices = (labels == label)
         print(f"There are {sum(label_indices)} pts with label {label}")
-        #numpy_data['sh0'][label_indices,0,:] = color / sh_C0
+        numpy_data['sh0'][label_indices,0,:] = color / sh_C0
 
         # We want to filter out the ground to isolate our object. 
         # To do this, we look at clusters with more horizontal std dev than vertical
