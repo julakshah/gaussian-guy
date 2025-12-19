@@ -29,8 +29,8 @@ Along with this, we implemented a method of generating the best path around a gi
 #### gsplat
 We include the [gsplat](https://github.com/nerfstudio-project/gsplat) library as a submodule of our project, as our reconstruction directly depends on this. To use this, make sure to clone recursively with `git pull --recurse-submodules`. 
 
-#### images (will become two folder I assume TBD)
-TBD
+#### images
+Contains images from run-through for gaussian splatting.
 
 #### src
 `src` contains all the python files used for the project with a couple exceptions such as the `calib_camera.py` file. Within `src` are the files used for general control (`run_arm.py`, `run_arm_just_circle.py`), our manipulation of the arm (`arm_controller.py`), collection of data from the realsense camera (`camera_controller.py`), adaptive path finding (`octree.py`, `pipeline.py`, `a_start_octree.py`), video processing (`process_video.py`), and gaussian processing (`process_gaussians.py`, `metrics.py`).
