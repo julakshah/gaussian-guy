@@ -9,14 +9,15 @@ We aimed to create a Gaussian Splatting Reconstruction of an object using image 
 - Generating waypoints for the robot end effector to travel to.
 - Taking a set of images of a given object at various angles to generate training and testing data for our splatting implementation.
 - Running Gaussian Splatting on this dataset using gsplat to create a 3D mesh of the object.
+- Performing basic post-processing on the splatted object to attempt to demonstrate the feasibility of directly modifying the results of a Gaussian splat reconstructions. 
 
-Our final product is divided into two stages. Our first stage will be the robot arm taking in x, y, z coordinates and roll, pitch, yaw values from our waypoint generation algorithm and taking images of the object from those angles. Our second stage will be inputting these training images into gsplat and and generating a mesh reconstruction of our test object.
+Our final product is divided into two stages. Our first stage will be the robot arm taking in x, y, z coordinates and roll, pitch, yaw values from our waypoint generation algorithm and taking images of the object from those angles. Our second stage will be inputting these training images into gsplat, generating a mesh reconstruction of our test object. and processing the results
 
 To view more about the development process, milestones, and project structure about our project, view our website [here](https://julianshah.com/gaussian-guy/)
 
 ## Project Structure
 
-This project leverages two major open-source components: documentation from a previous [CompRobo Final](https://github.com/eddydpan/chess_bot) which referenced the Berkeley Robot and AI Lab and [gsplat](https://github.com/nerfstudio-project/gsplat), a library for efficient Gaussian Splatting.
+This project leverages two major open-source components: documentation from a previous [CompRobo Final](https://github.com/eddydpan/chess_bot) which referenced the Berkeley Robot and AI Lab and [gsplat](https://github.com/nerfstudio-project/gsplat), a library for efficient Gaussian Splatting that incorporates algorithms and approaches from a number of different papers on Gaussian Splatting.
 
 Along with this, we implemented a method of generating the best path around a given object to add the most information to our data set using an A* algorithm, a method to cluster our splats, and a method to mask out and change the opacity of the splats  and isolate an object from the background.
 
@@ -26,7 +27,7 @@ Along with this, we implemented a method of generating the best path around a gi
 `calibration` contains the python file for camera calibration, a process that gives you information regarding the camera being used, such as the intrinsics, which are used for processes relating to the camera.
 
 #### gsplat
-TBD
+We include the [gsplat](https://github.com/nerfstudio-project/gsplat) library as a submodule of our project, as our reconstruction directly depends on this. To use this, make sure to clone recursively with `git pull --recurse-submodules`. 
 
 #### images (will become two folder I assume TBD)
 TBD
@@ -38,7 +39,17 @@ TBD
 `widowx_arm` contains the files needed to communicate with the Trossen WidowX robot arm and realsense camera. These have been adapted from [Chess Bot](https://github.com/eddydpan/chess_bot), the previous CompRobo final mentioned previously, which adapted the files from [Bridge Data Robot](https://github.com/rail-berkeley/bridge_data_robot), a project by PhD students at UC Berkley.
 
 ### Setup
-GAUSSIAN SETUP STUFF
+The complete Gaussian splatting pipeline requires a CUDA-compatible GPU, as the gsplat code requires GPU acceleration to function and is only written for CUDA. We recommend following the setup instructions on the [gsplat repository](https://github.com/nerfstudio-project/gsplat) in order to build gsplat. The library can either be built from source, compiled just-in-time upon first use, or installed via a precompiled wheel targeting a specific combination of Pytorch version and CUDA toolkit version. If it's possible to use a precompiled wheel, we recommend doing so --- differences between Pytorch and CUDA toolkit versions can easily mess with the compilation. 
+
+We also use COLMAP to produce the sparse reconstructions (structure from motion) that gsplat takes as input. COLMAP isntallation instructions can be found [here](https://colmap.github.io/install.html), including how to build COLMAP from source, as we did. While GPU acceleration is useful for COLMAP to run quickly and is necessary for dense reconstructions, it is not strictly necessary for the sparse reconstruction that we feed as input to our algorithm; thus, it can be compiled either with or without CUDA.
+
+We recommend creating a specific Python envrionment for work on this project, particularly the image reconstruction, as Pytorch and gsplat are picky abouy versioning. In particular, we found that an environment with Python 3.10 worked well. Other Python packages that are necessary for the reconstruction are stored in `requirements.txt`. Assuming a Python environment manager environment can be created as follows (using Conda to manage environments):
+
+```
+conda create --name gsplat310 python=3.10
+conda activate gsplat310
+pip install -r requirements.txt
+```
 
 For the widowx_arm, the setup can be found within the `README.md` file within `widowx_arm/bridge_data_robot-main`.
 
@@ -46,6 +57,7 @@ For the widowx_arm, the setup can be found within the `README.md` file within `w
 ### Execution
 Once setup has been complete, follow the steps below:
 
+#### Execution of Robot Movement
 STEP 1:
 ```bash
 # run this in bridge_data_robot_main
@@ -73,4 +85,40 @@ bash -lic "python3 /home/robonet/host_src/src/run_arm_just_circle.py"
 
 This should result in the the head of the arm orbiting the the point 27.5 centimeters forward from the center of the arm's base. Once this loop has been complete, the `images` folder will be cleared and the new images will be saved.
 
-EXECUTION OF SPLAT STUFF
+#### Execution of Image Processing / Reconstruction
+
+STEP 1: Copy the images into a new folder for a specific reconstruction. From the root of the project:
+```bash
+mkdir scan_1
+cp -r images/ scan_1/images/
+```
+
+STEP 2: Process the images in the images/ folder by 
+
+
+STEP 3: Produce the Gaussian-splatted result using gsplat and store it in a results/ directory
+```bash
+mkdir -p results/scan_1
+python3 gsplat/examples/simple_trainer.py default --data_dir scan_1/ --data_factor 1 --result_dir results/scan_1
+```
+While running this, gsplat will heavily use the GPU. To avoid out-of-memory (OOM) errors if the VRAM is entirely used up, consider closing other applications putting load on the GPU. The GPU usage and available memory can be inspected via `nvidia-smi` for an Nvidia GPU. if OOM errors persist, consider downsampling the images, storing them in a separate folder off of the data directory (i.e. `scan_1/images_4` for downsampled by a factor of 4) and pass the downsample factor as the argument following the `--data_factor` flag.
+
+By default, gsplat will run for 7k iterations, save the initial results, and then continue to run for a total of 30k iterations. The result after 7k iterations is often very good and certainly good enough for further testing, and the script can be safely stopped after saving the initial 7k iteration results if this is all that is desired. For other errors, consider exploring the gsplat library --- there are a number of different options for how to run the training, what rewards and update steps to use, how to lower memory usage, and so forth.
+
+STEP 4: Process the resulting Gaussian-splatted data in an attempt to isolate the object:
+```bash
+python3 src/process_gaussians.py scan_1/results/ckpts/ckpt_6999_rank0.pt
+```
+
+STEP 5: View either the original reconstruction or the processed splat
+```bash
+python3 gsplat/examples/simple_viewer.py --ckpt results/scan_1/ckpts/ckpt_6999_rank0.pt # original reconstruction
+```
+
+```bash
+python3 gsplat/examples/simple_viewer.py --ckpt src/modified_pt.pt # processed reconstruction
+```
+
+The processed reconstruction loads all the splats, organizes them into clusters based on mean and color, masks out all points that get mapped to the 'outlier' cluster (i.e. those that don't have a well defined cluster,) and then attempts to also mask out clusters that are likely to be the floor or table. For this very simple approach, we simply assume clusters with a sufficiently greater X and Y standard deviation than Z are the floor or table, and mask these out accordingly.
+
+The result is not particularly polished in many cases, but demonstrates the proof-of-concept that working directly with the Gaussians produced by Gaussian splatting can be a way to modify 3D reconstructions of scenes. 
