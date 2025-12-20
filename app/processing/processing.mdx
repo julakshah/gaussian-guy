@@ -1,3 +1,43 @@
 # Image Processing and Reconstruction
 
-## MVP and Stretch Goals
+On the image processing and reconstruction side of the project, our goal is to reconstruct a 3D scene via Gaussian Splatting, compare the results of that reconstruction with true photos, and then do some post-processing on the reconstruction to isolate the object that the arm scans.
+
+#### What is Gaussian Splatting? 
+
+Gaussian Splatting is a modern approach to 3D reconstruction distinguished by the Gaussian rendering primitives that it fits to a frame.
+
+Suppose we have this goal: 
+
+We want to view how an object looks in **three dimensions** given photos of it only in **two dimensions**. 
+This sounds difficult, but a solid object is still a solid object --- we only need to see around it, not inside it, for this task.
+If our object is small and convex, this doesn't sound difficult to do if we get to take a bunch of different images. Yet, how do we know how to stich the images together? 
+
+This is where feature matching comes in --- if we can isolate keypoints of an image and match keypoints with similar descriptors, we cam estimate how the camera has moved relative to the object.
+Just as with visual odometry, we can triangulate these keypoints in space and populate a map of them. Unlike visual odometry, however, the end goal isn't to know our movement, but to know the structure of the keypoints we triangulate --- thus the name [Structure from Motion](https://en.wikipedia.org/wiki/Structure_from_motion). 
+
+After we locate the keypoints in space and potentially do some refinement of them, we have a sparse reconstruction --- the shape of the object is visible, but it's mostly empty. 
+Generating a full reconstruction, one that will look like the images we fed into the algorithm, is an expensive process that consists of us iteratively adding to or subtracting from our reconstruction, comparing it against our input images, and making further adjustments for as long as we like.
+
+What makes Gaussian splatting unique, though, is that unlike most other forms of reconstrution, it doesn't generate a triangular mesh --- instead, it generates a large amount of multivariate normal distributions in space. 
+While the Gaussians are typically represented with a mean and a covariance, the covariance actually encodes the same amount of information as their scale along each X,Y,Z axis and their rotation. Because Gaussians in space sort of look like fuzzy ellipsoids, they end up performing very well when it comes to blending colors, reflecting light, and approximating an image in general.
+Additionally, Gaussians are continuous and differentiable, which makes optimization in a neural network much easier than with a triangular mesh. 
+
+With Gaussian splatting, we can end up with an image like this:
+![gsplat house](images/gsplat_20mins_test.png)
+
+Given that there are continually updating libraries refining code for Gaussian splatting and making it easier and easier to use, we were quite excited to try it our for our project.
+
+## Generating the gsplt reconstruction
+
+The process for generating the gsplat reconstruction is very similar to the conceptual overview above. In this case, we rely on the COLMAP library to do the feature extraction, matching, and sparse reconstruction.
+We then simply feed the sparse reconstruction into gsplat, an impressive library that works in a number of different Gaussian splatting approaches into a very configurable library. 
+
+## Computing metrics from the gsplat reconstruction
+
+![estop metrics](images/estop_metrics.png)
+
+## Isolating an object in the gsplat reconstruction
+
+![estop isolated](images/estop_isolated)
+
+

@@ -6,7 +6,7 @@ export default function Navbar() {
       <div className="nav-inner">
         <img
           className="arm-icon"
-          src="/site-elements/robot-arm.png"
+          src="site-elements/robot-arm.png"
           alt="robot arm icon by verry purnomo - Flaticon"
           width="50"
           height="50"
