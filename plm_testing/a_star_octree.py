@@ -1,23 +1,4 @@
 """Frontier navigation using A* on an Octree"""
-"""
-While true:
-    frontiers = find_unknown_leaves(octree)
-
-    if frontiers is empty:
-        break
-    
-    goal = closest_frontier(frontiers, start_pos)
-    path = A_Star(octree, start_pos, goal)
-
-    if path is empty:
-        set goal as occupied
-        continue
-    
-    for node in path:
-        move_to(node.position)
-
-        sensor_data = get_sensor_data(current_pos)
-"""
 
 import heapq
 from typing import Dict, List, Tuple
@@ -31,12 +12,21 @@ SAFETY_MARGIN = 0.02
 
 # Functions
 def calculate_h(position, dest):
+    """Calculates the Euclidean distance heuristic between two points.
+
+    Args:
+        position: Current (x, y, z) position.
+        dest: Goal (x, y, z) position.
+
+    Returns:
+        float: The Euclidean distance.
+    """
     h = np.sqrt((position[0] - dest[0])**2 + (position[1] - dest[1])**2 + (position[2] - dest[2])**2)
     return float(h)
 
 def reconstruct_path(node_path, current_node):
     """
-    Reconstruct the path from goal to start by following parent pointers.
+    Reconstruct the path from goal to start.
     """
     path = [current_node]
     while current_node in node_path:
@@ -47,7 +37,7 @@ def reconstruct_path(node_path, current_node):
 def is_safe_node(node: OctreeNode, root: OctreeNode, safety_margin: float = SAFETY_MARGIN) -> bool: ####LLM
     """
     Check if a node is safe to traverse (not occupied and maintains safety margin).
-    A node is unsafe if it's occupied OR if any occupied cell is within safety_margin.
+    A node is unsafe if it's occupied OR if an occupied cell is within safety_margin.
     """
     if node.status == 'occupied':
         return False
@@ -64,8 +54,16 @@ def is_safe_node(node: OctreeNode, root: OctreeNode, safety_margin: float = SAFE
     return True
 
 def find_path(root: OctreeNode, start, goal) -> List[OctreeNode]:
-    """
-    A* algorithm
+    """Implements A* to find path from start to goal through Octree positions
+
+    Args:
+        root: The root of the Octree.
+        start: The (x, y, z) start coordinates.
+        goal: The (x, y, z) goal coordinates.
+
+    Returns:
+        List[OctreeNode]: A list of nodes representing the path from start to goal.
+                          Returns an empty list [] if no path is found.
     """
     # Branch octree to get start and goal nodes
     start_node = root.find_leaf(start)
@@ -108,8 +106,17 @@ def find_path(root: OctreeNode, start, goal) -> List[OctreeNode]:
                 heapq.heappush(queue, (f_score[neighbor], step_count, neighbor))
     return []
 
-def closest_unknown(root: OctreeNode, start_pos: Tuple[float, float, float]) -> Tuple[float, float, float]:
-    """Identify closest unknown cell"""
+def closest_unknown(root: OctreeNode, start_pos: Tuple[float, float, float]) -> Tuple[float, float, float]: ### Consider changing to return the node itself to match other method conventions
+    """Identify position of closest unknown cell
+    
+    Args:
+        root: The Octree root node.
+        start_pos: The robot's current position.
+    
+    Returns:
+        None: if no unknown leaves
+        Tuple[x,y,z]: the position of the closest unknown Octree node
+        """
     unknown_leaves = []
     find_unknown_leaves(root, unknown_leaves)
 
@@ -119,8 +126,20 @@ def closest_unknown(root: OctreeNode, start_pos: Tuple[float, float, float]) -> 
     closest_unknown = min(unknown_leaves, key=lambda leaf: calculate_h(leaf.position, start_pos))
     return closest_unknown.position
 
-def go_to_goal(root: OctreeNode, start_pos: Tuple[float, float, float]) -> List[Tuple[int, int]]:
-    """Plan path to goal using A*"""
+def go_to_goal(root: OctreeNode, start_pos: Tuple[float, float, float]) -> List[OctreeNode]:
+    """Identifies the nearest unknown frontier and plans an A* path to it.
+    
+    If a path cannot be found to the closest unknown node (e.g., it is unreachable),
+    that node is marked as 'occupied' to prevent infinite loops, and the next 
+    closest frontier is selected.
+
+    Args:
+        root: The Octree root node.
+        start_pos: The robot's current position.
+
+    Returns:
+        List[OctreeNode]: The planned path, or [] if no frontiers remain.
+    """
     standoff_distance = 0.08
 
     while True:
@@ -149,11 +168,17 @@ def go_to_goal(root: OctreeNode, start_pos: Tuple[float, float, float]) -> List[
         if path:
             return path
         
-        # Failure case. Assumes an unreachable node is surrounded by occupied and thus for snaccing purposes, also occupied
+        # Failure case. Assumes an unreachable node is surrounded by occupied and thus for scanning purposes, also occupied
         root.update_cell(unknown_pos, is_occupied=True)
 
 
 def find_unknown_leaves(node: OctreeNode, unknown_leaves: list):
+    """Collects all leaf nodes with status 'unknown'. Suggested use is with root node for all unknowns in root's space.
+    
+    Args:
+        node: The current node to check.
+        unknown_leaves: A list to append found unknown nodes to (modified in-place).
+    """
     # If leaf node
     if node.children[0] is None:
         if node.status == "unknown":
@@ -175,9 +200,9 @@ def visualize_path(root: OctreeNode, path: List[OctreeNode]):
         ax.scatter(xs[0], ys[0], zs[0], color='green', s=100, label='Start')
         ax.scatter(xs[-1], ys[-1], zs[-1], color='red', s=100, label='Goal')
 
-    ax.set_xlim(-25,25)
-    ax.set_ylim(-25,25)
-    ax.set_zlim(-25,25)
+    ax.set_xlim(-1, 1)
+    ax.set_ylim(-1, 1)
+    ax.set_zlim(-1, 1)
     ax.set_box_aspect([1,1,1])
     ax.legend()
     plt.show()
@@ -198,7 +223,7 @@ if __name__ == "__main__":
         for z in np.arange(-0.4, 0.4, 0.04):
             root.insert_obstacle((0, y, z))
 
-    # Wall 2: A floor/ceiling plate at Z=-5 (Forces the robot to go up)
+    # Wall 2: A floor/ceiling plate at Z=-0.4 (Forces the robot to go up)
     # Spans X: -10 to 10, Y: -10 to 10
     for x in np.arange(-0.4, 0.4):
         for y in np.arange(-0.4, 0.4):

@@ -29,7 +29,7 @@ import open3d
 from plm_testing.a_star_octree import go_to_goal, find_unknown_leaves
 from plm_testing.octree import OctreeNode
 
-octree = OctreeNode(position=(0,0,0), r=0.8, min_r=0.02)
+octree = OctreeNode(position=(0,0,0), radius=0.8, min_radius=0.02)
 unknown_nodes_remain = True
 while unknown_nodes_remain:
     # -> call camera API to get image
@@ -53,6 +53,7 @@ while unknown_nodes_remain:
         octree.raycast(start_pos, tupled_point)
 
     path = go_to_goal(octree, start_pos)
+    # convert OctreeNodes in path to tuple positions? just call OctreeNode.position in the loop?
     for waypoint in path:
         # waypoint_with_roll_pitch_yaw = add in way to modify waypoint to have rpy
         # -> move_to(waypoint_with_roll_pitch_yaw)

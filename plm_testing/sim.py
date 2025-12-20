@@ -10,37 +10,26 @@ from plm_testing.octree import OctreeNode
 
 # Config
 # Simulation Parameters
-NUM_OBSTACLES = 200              # Number of random obstacles in environment
-START_POSITION = (-18, -18, -18)  # Starting position for robot
-WORLD_BOUNDS = 200.0             # +/- bounds of the world
+NUM_OBSTACLES = 200
+START_POSITION = (-18, -18, -18)
+WORLD_BOUNDS = 200.0
 
 # Sensor Parameters
-SENSOR_RANGE = 10.0             # D435 Reliable range is approx 10m
-SENSOR_MIN_RANGE = 0.3          # Blind spot within 30cm
-CAMERA_FOV_H = 87.0             # Horizontal FOV
-CAMERA_FOV_V = 58.0             # Vertical FOV
-CAMERA_RES_H = 40               # horizontal resolution
-CAMERA_RES_V = 27               # vertical resolution
+SENSOR_RANGE = 10.0
+SENSOR_MIN_RANGE = 0.3
+CAMERA_FOV_H = 87.0
+CAMERA_FOV_V = 58.0
+CAMERA_RES_H = 40
+CAMERA_RES_V = 27
 
 # Initial Exploration
-INIT_RADIUS = 10.0              # Radius of the starting circular scan
-INIT_CIRCLE_STEPS = 40          # Number of waypoints in circular scan
+INIT_RADIUS = 10.0
+INIT_CIRCLE_STEPS = 40
 
 # Visualization
-VISUALIZATION = True            # Set to False for text-only output
-STEP_DELAY = 0.00005              # Delay in seconds between viz updates
-VIZ_FIGURE_SIZE = (10, 8)       # Figure size for visualization
-
-# Display Colors
-COLOR_PATH = 'blue'             # Color for planned path
-COLOR_ROBOT = 'green'           # Color for robot marker
-COLOR_FRONTIER = 'orange'       # Color for frontier nodes
-COLOR_OBSTACLES = 'black'       # Color for true obstacles (ghost view)
-
-# Display Sizes
-SIZE_ROBOT = 100                # Size of robot marker
-SIZE_FRONTIER = 30              # Size of frontier markers
-SIZE_OBSTACLE = 10              # Size of obstacle markers
+VISUALIZATION = True
+STEP_DELAY = 0.00005
+VIZ_FIGURE_SIZE = (10, 8)
 
 # Display Alpha
 ALPHA_FRONTIER = 0.8            # Opacity of frontier markers
@@ -101,7 +90,7 @@ def update_cell_with_max_size(root, pos, is_occupied, max_leaf_size=2.0):
     
     # 2. If the leaf is huge (radius > max_leaf_size), split it!
     # We loop until it's small enough.
-    while leaf.r > max_leaf_size:
+    while leaf.radius > max_leaf_size:
         leaf.splitting() #
         # After splitting, find the specific child that contains 'pos'
         leaf = root.find_leaf(pos)
@@ -115,44 +104,48 @@ def update_cell_with_max_size(root, pos, is_occupied, max_leaf_size=2.0):
     # 4. Cleanup parents (optional, but keeps tree clean)
     leaf.update_parents() #
 
-def simulate_sensor(robot_pos, true_obstacles, octree_root, sensor_range=SENSOR_RANGE):
+def simulate_sensor(robot_pos, true_obstacles, octree_root, sensor_range=SENSOR_RANGE, sensor_min_range=SENSOR_MIN_RANGE): # trajectory, 
     """
-    Simulates a sensor reading
+    Simulates a sensor reading by taking a sphere around the robot position and assuming all objects within range are detected.
+    
     1. Detects obstacles within sensor_range.
-    2. Clears space (marks empty) along the line of sight (simplified here as a radius clear).
+    2. Clears space (marks empty) along the line of sight with raycast (simplified as a radius clear).
+
+    Limitations:
+    - Senses everyting within range (even if behind obstacle)
+    - 
+    
     returns: True if the map changed, False otherwise.
     """
     map_changed = False
     
-    # 1. Detect Obstacles
+    # Detect Obstacles
     for obs in true_obstacles:
         dist = np.sqrt((obs[0]-robot_pos[0])**2 + (obs[1]-robot_pos[1])**2 + (obs[2]-robot_pos[2])**2)
         
-        if dist <= sensor_range:
+        if dist <= sensor_range and dist > sensor_min_range:
             # Skip obstacles outside map bounds
             leaf = octree_root.find_leaf(obs)
             if leaf is None:
                 continue
-            # If the robot thinks this is unknown or empty, but it's actually occupied:
-            current_status = octree_root.find_leaf(obs).status
-            if current_status != 'occupied':
+
+            if leaf.status != 'occupied':
                 update_cell_with_max_size(octree_root, obs, is_occupied=True, max_leaf_size=1.0)
                 map_changed = True
 
-    # 2. Clear Empty Space
-    # In a real implementation, you would Raycast. 
-    # For this simulation, we can just mark the immediate area around the robot as empty
-    # if there is no obstacle there.
-    # (Simplified for brevity - assumes robot occupies a small point)
-    current_node = octree_root.find_leaf(robot_pos)
-    if current_node and current_node.status == 'unknown':
-         update_cell_with_max_size(octree_root, robot_pos, is_occupied=False, max_leaf_size=1.0)
-         map_changed = True
-         
+            octree_root.raycast(origin=robot_pos, target=obs)
+
+    # Affirm not occupied
+    current_node = octree_root.find_leaf(obs)
+    if current_node and current_node.status != 'empty':
+        update_cell_with_max_size(octree_root, robot_pos, is_occupied=False, max_leaf_size=1.0)
+        # map_changed = True
+
+    # Clear Empty Space
     return map_changed
 
 def autonomous_exploration(start_pos, true_obstacles):
-    robot_map = OctreeNode(position=(0,0,0), r=WORLD_BOUNDS) 
+    robot_map = OctreeNode(position=(0,0,0), radius=WORLD_BOUNDS) 
     current_pos = start_pos
     
     # Setup Visualization
@@ -175,10 +168,10 @@ def autonomous_exploration(start_pos, true_obstacles):
     
     circle_start_target = circle_path[0]
 
-    print("Phase 0: Moving to Initialization Circle...")
+    print("Circle time")
     
     # Plan path to the first point of the circle
-    transit_path = find_path(current_pos, circle_start_target, robot_map)
+    transit_path = find_path(robot_map, current_pos, circle_start_target)
     
     if transit_path:
         for node in transit_path:
@@ -221,7 +214,7 @@ def autonomous_exploration(start_pos, true_obstacles):
         print(f"\r[Iter {iteration}] Pos: {current_pos} | Goal: {goal_pos} | Unk Leaves: {len(frontiers)}", end="")
 
         # 3. Plan Path
-        path = find_path(current_pos, goal_pos, robot_map) #
+        path = find_path(robot_map, current_pos, goal_pos) #
 
         if not path:
             print("\n  -> Goal Unreachable. Marking occupied.")

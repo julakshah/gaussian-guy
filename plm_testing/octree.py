@@ -29,22 +29,22 @@ class OctreeNode:
                 its children hold the actual occupancy information.
         parent: Reference to the parent OctreeNode (container) or none if root
         children: List of 8 child OctreeNodes or None if leaf
-        min_r: Minimum radius before stopping subdivision
+        min_radius: Minimum radius before stopping subdivision
 
     """
-    def __init__(self, position, radius=1, parent=None, min_r=0.02):
+    def __init__(self, position, radius=1, parent=None, min_radius=0.02):
         self.position = position    # (x, y, z)
         self.radius = radius  # radius
         self.status = 'unknown'
         self.parent = parent
         self.children = [None] * 8  # Child nodes
-        self.min_r = min_r
+        self.min_radius = min_radius
 
     def splitting(self):
         """Subdivides self (OctreeNode) into 8 equal-sized child nodes. Changes the node's status to 'container'.
         """        
         # Check if already split or minimum size
-        if (self.children[0] is not None) or (self.radius / 2 < self.min_r):
+        if (self.children[0] is not None) or (self.radius / 2 < self.min_radius):
             return
         
         # Values for child nodes
@@ -67,7 +67,7 @@ class OctreeNode:
                 ),
                 radius=new_r,
                 parent=self,
-                min_r=self.min_r,
+                min_radius=self.min_radius,
             )
         self.status = 'container'
     
@@ -105,7 +105,7 @@ class OctreeNode:
 
     def insert_obstacle(self, obstacle_pos): ### change to be "insert_entity" and pass in which type of node
         """Recursively traverses the tree to find the leaf node containing the
-        obstacle and assign status. If the leaf is larger than min_r, it splits.
+        obstacle and assign status. If the leaf is larger than min_radius, it splits.
 
         Args:
             obstacle_pos: A tuple (x, y, z) representing the obstacle's location.
@@ -296,7 +296,7 @@ class OctreeNode:
         
         # 2. Step size
         # radius/2 ensures we don't skip over any voxels (Nyquist sampling)
-        step_size = self.min_r / 2 ### Change to leaf size?
+        step_size = self.min_radius / 2 ### Change to leaf size?
         
         # 3. Loop using simple addition
         current_dist = 0.0
@@ -375,8 +375,8 @@ if __name__ == "__main__":
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     root.draw(ax)
-    ax.set_xlim(-25,25)
-    ax.set_ylim(-25,25)
-    ax.set_zlim(-25,25)
-    ax.set_box_aspect([1,1,1])
+    limit = root.radius * 1.1  # slightly larger than root radius
+    ax.set_xlim(-limit, limit)
+    ax.set_ylim(-limit, limit)
+    ax.set_zlim(-limit, limit)
     plt.show()
