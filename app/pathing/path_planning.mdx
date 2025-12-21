@@ -1,0 +1,18 @@
+# Adaptive Path Planning
+
+## Octree
+This project uses a custom octree to represent 3D space. The decision to utilize a custom implementation over using existing octree structures, 
+such as from Open3D, was made to be able to store each leaf in the Octree as empty, occupied, or unknown. Note that the octree is used solely during
+the adaptive path planning phase.
+
+![Octree](images/arm_photo.png)
+
+The octree itself is a recursive structure based upon the class OctreeNode. We define a space larger then the object with an initial node 
+reffered to as the root. From there, subdivision with the splitting() method allows for local intricacies to be captured while large spaces 
+with the same status can avoid splitting to save on complexity.
+
+## Pathing
+The base of the adaptive pathing is a basic 3D A* algorithm that uses Euclidean distance as a heuristic. 
+[Uses start as the position of the camera and goal of the next shot of unknown space]. The closest unknown is found by finding all unknown leaves in the octree and using a Euclidean 
+distance heuristic to assume as the closest one. From there the position of the node is offset by 8 cm to account for the camera's 
+minimum distance and to avoid crashing into the unknown space if it is indeed occupied.
