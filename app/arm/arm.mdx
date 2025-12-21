@@ -51,8 +51,8 @@ arm_controller: Creates our custom arm controlling class, allowing run_arm to co
 
 camera_controller: Creates our custom camera controlling class, allowing run_arm to get constantly updating depth and video imaging and store frames for gaussian splatting
 
-a_star_octree: Connor
+a_star_octree: Holds functions for adaptive path planning using A* to move to position next to closest unknown space in octree.
 
-octree: Connor
+octree: Holds custom Octree class representing 3D space as "empty," "occupied," and "unknown."
 
 run_arm: Initializes the arm_controller, camera_controller, and octree classes, manipulating the arm to complete a full circle scan before beginning the a star path optimization.
