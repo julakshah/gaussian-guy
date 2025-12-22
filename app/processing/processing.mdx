@@ -25,7 +25,7 @@ Additionally, Gaussians are continuous and differentiable, which makes optimizat
 With Gaussian splatting, we can end up with reconstructions like these:
 ![gsplat house](images/gsplat_20mins_test.png)
 
-<iframe width="1400" height="781" src="https://www.youtube.com/embed/gPGKE0bSqmY" title="Estop reconstruction" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe width="700" height="340" src="https://www.youtube.com/embed/gPGKE0bSqmY" title="Estop reconstruction" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 Given that there are continually updating libraries refining code for Gaussian splatting and making it easier and easier to use, we were quite excited to try it our for our project.
 
@@ -127,13 +127,15 @@ We performed this same processing on the scan of the arm's end effector, with sl
 
 ![arm isolated](images/arm_isolated.png)
 
-<iframe width="1400" height="781" src="https://www.youtube.com/embed/a-mM5JRKQhs" title="Reconstruction after masking" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+<iframe width="700" height="340" src="https://www.youtube.com/embed/a-mM5JRKQhs" title="Reconstruction after masking" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 As can be seen, however, some of this is expected --- the arm scan environment was more cluttered than we anticipated, with one laptop being in view and another clipboard put up to block movement off the side of the frame from confusing the reconstruction. These are generally retained, as is a small part of the table.
 In general, though, the selection of clusters is close to what we would like, and viewing the independent clusters that remain demonstrates how this processing was in fact able to isolate the parts of the reconstruction that had a more interesting shape to them.
 
 ![arm clusters](images/arm_clusters.png)
 
-<iframe width="1378" height="808" src="https://www.youtube.com/embed/WiPtFoUg84g" title="Cluster-colored Gsplat Render" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+<iframe width="850" height="500" src="https://www.youtube.com/embed/WiPtFoUg84g" title="Cluster-colored Gsplat Render" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 Again, there are many more refined ways this could be done, as well as ways in which this method could be further tuned. In the interest of time, however, we were satisfied with this performance as a proof-of-concept that the general idea can work --- we can process Gaussians directly to apply some meaningful transformation to the 3D reconstruction produced by Gaussian splatting. 
