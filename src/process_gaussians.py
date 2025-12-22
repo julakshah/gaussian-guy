@@ -23,12 +23,6 @@ def logit(x, eps=1e-6):
     x = x.clamp(eps, 1 - eps)
     return torch.log(x / (1 - x))
 
-<<<<<<< Updated upstream:src/process_gaussians.py
-if __name__ == "__main__":
-    #src = "../../gsplat/examples/results/personhall_downsample/ckpts/ckpt_29999_rank0.pt"
-    src = "./results/estop_2/ckpts/ckpt_6999_rank0.pt"
-    dst = "./modified_gaussians.pt"
-=======
 def main(src: str="./results/splatted_new/ckpts/ckpt_6999_rank0.pt",
     dst: str="./modified_gaussians.pt"):
     """
@@ -48,7 +42,6 @@ def main(src: str="./results/splatted_new/ckpts/ckpt_6999_rank0.pt",
         src (str): Source directory to load gaussians from
         dst (str): Destination directory to save gaussians into after modifying them
     """
->>>>>>> Stashed changes:components/process_gaussians.py
 
     checkpoint_data = torch.load(src, map_location='cpu')
     print(f"checkpt data: {checkpoint_data}")
