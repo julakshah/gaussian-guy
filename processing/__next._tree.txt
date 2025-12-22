@@ -5,4 +5,4 @@
 :HL["images/estop_isolated.png","image"]
 :HL["images/arm_isolated.png","image"]
 :HL["images/arm_clusters.png","image"]
-0:{"buildId":"ql-DsDUEQbeQefHzmHVyx","tree":{"name":"","paramType":null,"paramKey":"","hasRuntimePrefetch":false,"slots":{"children":{"name":"processing","paramType":null,"paramKey":"processing","hasRuntimePrefetch":false,"slots":{"children":{"name":"__PAGE__","paramType":null,"paramKey":"__PAGE__","hasRuntimePrefetch":false,"slots":null,"isRootLayout":false}},"isRootLayout":false}},"isRootLayout":true},"staleTime":300}
+0:{"buildId":"0rELYLbtcOFzhyRSANwX6","tree":{"name":"","paramType":null,"paramKey":"","hasRuntimePrefetch":false,"slots":{"children":{"name":"processing","paramType":null,"paramKey":"processing","hasRuntimePrefetch":false,"slots":{"children":{"name":"__PAGE__","paramType":null,"paramKey":"__PAGE__","hasRuntimePrefetch":false,"slots":null,"isRootLayout":false}},"isRootLayout":false}},"isRootLayout":true},"staleTime":300}
