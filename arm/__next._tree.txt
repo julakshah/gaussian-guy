@@ -2,4 +2,4 @@
 :HL["site-elements/robot-arm.png","image"]
 :HL["images/arm_photo.png","image"]
 :HL["images/system_diagram.png","image"]
-0:{"buildId":"URAv-i-Pq9dMq7n0a6zCl","tree":{"name":"","paramType":null,"paramKey":"","hasRuntimePrefetch":false,"slots":{"children":{"name":"arm","paramType":null,"paramKey":"arm","hasRuntimePrefetch":false,"slots":{"children":{"name":"__PAGE__","paramType":null,"paramKey":"__PAGE__","hasRuntimePrefetch":false,"slots":null,"isRootLayout":false}},"isRootLayout":false}},"isRootLayout":true},"staleTime":300}
+0:{"buildId":"b_k93IiYZZEImNU9Kuw-i","tree":{"name":"","paramType":null,"paramKey":"","hasRuntimePrefetch":false,"slots":{"children":{"name":"arm","paramType":null,"paramKey":"arm","hasRuntimePrefetch":false,"slots":{"children":{"name":"__PAGE__","paramType":null,"paramKey":"__PAGE__","hasRuntimePrefetch":false,"slots":null,"isRootLayout":false}},"isRootLayout":false}},"isRootLayout":true},"staleTime":300}

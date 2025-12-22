@@ -1,3 +1,3 @@
 :HL["/gaussian-guy/_next/static/chunks/cc4d25588a8eb5c0.css","style"]
 :HL["site-elements/robot-arm.png","image"]
-0:{"buildId":"URAv-i-Pq9dMq7n0a6zCl","tree":{"name":"","paramType":null,"paramKey":"","hasRuntimePrefetch":false,"slots":{"children":{"name":"setup","paramType":null,"paramKey":"setup","hasRuntimePrefetch":false,"slots":{"children":{"name":"__PAGE__","paramType":null,"paramKey":"__PAGE__","hasRuntimePrefetch":false,"slots":null,"isRootLayout":false}},"isRootLayout":false}},"isRootLayout":true},"staleTime":300}
+0:{"buildId":"b_k93IiYZZEImNU9Kuw-i","tree":{"name":"","paramType":null,"paramKey":"","hasRuntimePrefetch":false,"slots":{"children":{"name":"setup","paramType":null,"paramKey":"setup","hasRuntimePrefetch":false,"slots":{"children":{"name":"__PAGE__","paramType":null,"paramKey":"__PAGE__","hasRuntimePrefetch":false,"slots":null,"isRootLayout":false}},"isRootLayout":false}},"isRootLayout":true},"staleTime":300}
