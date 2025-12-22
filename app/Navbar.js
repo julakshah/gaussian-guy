@@ -16,6 +16,7 @@ export default function Navbar() {
           <Link href="/milestones">Milestones</Link>
           <Link href="/setup">Project Setup</Link>
           <Link href="/arm">Arm Movement</Link>
+          <Link href="/pathing">Arm Path Generation</Link>
           <Link href="/processing">Image Processing</Link>
         </div>
       </div>
