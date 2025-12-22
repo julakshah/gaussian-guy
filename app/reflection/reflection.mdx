@@ -1,0 +1,54 @@
+# Next Steps & Reflection
+
+After going through this project, we've identified a few places that would be interesting to explore in the future and identified a few insights we had into our own process working on this project.
+
+## Next Steps
+
+### Robust image extraction 
+
+Currently, our scanning code, running on the robot, only saves the images properly after the script has concluded running.
+However, there are a number of cases when we might want to stop the script prematurely --- perhaps the arm has hit something we didn't anticipate or that it didn't see, or perhaps we're just out of time and want to use what data we have.
+Changing the code to save the images as the arm goes along would make these scenarios less annoying.
+
+### Integrate valid robot positions into obstacle avoidance
+
+When testing our robot, we noticed there were a few end effector positions near the extent of the robot's reach that the robot could not hold consistently, with the arm sometimes dropping. For all intents and purposes, these are "obstacles" --- locations in physical space where the robot cannot be, which map to a set of invalid joint positions of the robot. 
+This led to multiple failed scan attempts, as the robot would attempt to move to one of these invalid locations in the course of its scan, would fail, and would need to be restarted. 
+If we were to make this more reliable, we would identify the positions in which we observe this behavior of our robot, generate some way of encoding those positions (perhaps a YAML file with 8-point tuples representing disallowed regions of space for the arm,) and generate a way of passing these fences to the pathing script in order to ensure the robot would not navigate there.
+
+### Single-command reconstruction
+
+While we attempted to make the different processing and reconstruction stages flow fairly nicely into each other, the dream goal for a project like this is for it all to be done under a single command.
+To do this, we'd likely go about directly invoking COLMAP commands using Python, rather than dealing with the PyColmap bindings. We'd also handle the directory creation, separation of test and training images, and renders of the test images, all within one script.
+
+Integrating this is less of a technical challenge and more of a logistic one, and in the interest of time, we prioritized getting the individual components functioning and decently integrated rather than smoothly integrating them all.
+
+### Modular splat post-processing
+
+As a proof of concept, the masking and processing applied to the splatted result in an attempt to isolate the object is generally hard-coded into the script. If we were more interested in exploring how this algorithm could work better, we would allow the clustering parameters and masking thresholds to be tuned easily via the command line. 
+
+We would also explore different clustering algorithms as well as subsets of our data to use as the clustering heuristic to see which approaches would segment our scene the best.
+
+### Automated metric evalutation 
+
+Our `metrics.py` script relies on the two COLMAP models be manually aligned via `colmap model_aligner`, and the coordinates to use for the reconstruction specified. A valuable next step for this project would involve computing these positions automatically, feeding them into the algorithm manually, and computing the average error across all test images, such that the accuracy of a reconstruction could be quickly scanned.
+We could then fairly easily graph this data and actually use it to evaluate our pathing approach. 
+
+## Reflection
+
+This project has been great fun for us, and we've enjoyed dividing up the work in interfacing with hardware unfamiliar to most of us and implementing/interfacing with algorithms many of us lacked experience with. 
+However, were we to do this project over again, we identified a few ways in which we'd approach it differently or revise how we thought about it.
+
+Dividing up the work went fairly well, and was necessary for this project to be completed in a reasonable timeframe. 
+Working with the arm was nontrivial, as was setting up COLMAP as Gaussian Splatting; if one person were to do all of those, they'd have little time to do much else for the first part of the project.
+However, we didn't take the time to spread this knowledge of the different components amongst ourselves once these components were working on our own machines. This created dependencies on specific people --- i.e. person A needs to be present when scanning with the arm; person B needs to be around to generate the reconstruction, etc. 
+This effect is not only counterproductive to our productivity, but also to our own understanding and learning --- we'd all have had a better experience had we learned to get all of the different parts of the code working on all of our machines, after which we'd be able to play around with them more.
+
+Our project was also initially short on a vision of what a full prototype would look like. When we defined this project, we summed it up very concisely --- Gaussian Splatting using a robot arm --- but did not significantly elaborate on what that would entail. In order to have enough work for each member of the group to feel satisfied, we added subcomponents throughout --- obstacle avoidance, pathing algorithms, reconstruction metrics, isolating the object in the scene, etc. 
+These are all interesting ideas, and we're very happy to have them be a part of the project, yet our process of adding them in felt like it lacked the structure it could have had.
+
+I believe there's a way for all of these different components and scripts to arise naturally within the context of a project --- if we were to focus on solving the question of efficiently representing an object using Gaussian splatting, we could break apart the "efficiency" element in order to justify our choice for navigating to specific valuable frames, and for measuring the reconstruction against a test dataset for measuring it. In this case, our metrics would actually be metrics informing us of the quality of our chosen trajectory for taking images and number of images to take. 
+Through this lens, a lot of the decisions made in the project would make more sense, rather than simply being interesting in their own isolated way. As an added bonus, clearly articulating this structure would also have made it easier to integrate our code together, as that was the most difficult part of making the project come together.
+
+On the whole, however, we are satisfied with what we've produced. This project let us get a taste of forward and inverse kinematics, explore pathing and obstacle avoidance using A\*, learn about how to discretize space as an octree, practice developing within a Docker container when we interfaced with the arm, consciously explore gsplat documentation when debugging our own post-processing and metric generation for the 3D reconstruction, and practice dealing with the eternal struggle of Python package version mismatches. 
+We've learned a fair bit, focused in on the specific regions of this project we worked on, and found it a very interesting project overall.

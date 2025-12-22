@@ -18,6 +18,7 @@ export default function Navbar() {
           <Link href="/arm">Arm Movement</Link>
           <Link href="/pathing">Arm Path Generation</Link>
           <Link href="/processing">Image Processing</Link>
+          <Link href="/reflection">Next Steps & Reflection</Link>
         </div>
       </div>
     </nav>
