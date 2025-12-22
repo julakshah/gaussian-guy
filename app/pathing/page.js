@@ -1,4 +1,4 @@
-import Pathing from "./pathing.mdx";
+import Pathing from "./path_planning.mdx";
 
 export default function ArmPage() {
   return (
