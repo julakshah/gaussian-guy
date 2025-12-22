@@ -10,14 +10,38 @@ import hdbscan
 from matplotlib import colormaps
 
 def logit(x, eps=1e-6):
+    """
+    Inverse of signmoid function
+    We manually need to pass opacity through a sigmoid to adjust it as we would expect,
+    so this makes undoing that activation function easier
+    
+    Args:
+        x (pytorch Tensor): Pytorch Tensor to pass through the function
+        eps (float): epsilon to avoid div by zero
+    """
     # clamp to avoid infs at 0 or 1
     x = x.clamp(eps, 1 - eps)
     return torch.log(x / (1 - x))
 
-if __name__ == "__main__":
-    #src = "../../gsplat/examples/results/personhall_downsample/ckpts/ckpt_29999_rank0.pt"
-    src = "./results/splatted_new/ckpts/ckpt_6999_rank0.pt"
-    dst = "./modified_gaussians.pt"
+def main(src: str="./results/splatted_new/ckpts/ckpt_6999_rank0.pt",
+    dst: str="./modified_gaussians.pt"):
+    """
+    Main function to load gaussians, mask out outliers and try to isolate the scanned object
+    The result is another .pt file that can be viewed with gsplat's simple_viewer
+
+    Works as follows:
+        Loads data from source
+        Clusters data using HDBSCAN according to means and colors
+        Sets opacity of outlier points to zero
+        Identifies clusters with x and y standard deviations as 
+            greater than THRESHOLD_FACTOR the z std dev as part of the table,
+            and masks those out as well
+        Saves the resulting splats to a destination file.
+
+    Args:
+        src (str): Source directory to load gaussians from
+        dst (str): Destination directory to save gaussians into after modifying them
+    """
 
     checkpoint_data = torch.load(src, map_location='cpu')
     print(f"checkpt data: {checkpoint_data}")
@@ -49,10 +73,10 @@ if __name__ == "__main__":
     print(f"Numpy data: {numpy_data}")
     print(f"sh0 shape: {numpy_data['sh0'].shape}, shN shape: {numpy_data['shN'].shape}")
 
-    data_in = np.concatenate([numpy_data['means'],10*numpy_data['sh0'].squeeze(1),numpy_data['sh0'].squeeze(1)],axis=1)
+    data_in = np.concatenate([numpy_data['means'],numpy_data['sh0'].squeeze(1),numpy_data['sh0'].squeeze(1)],axis=1)
     print(f"Input data shape: {data_in.shape}")
 
-    clusterer = hdbscan.HDBSCAN(min_cluster_size=1000,min_samples=10,cluster_selection_method="leaf")
+    clusterer = hdbscan.HDBSCAN(min_cluster_size=1000,cluster_selection_method="leaf")
     t0 = time.perf_counter()
     print(f"Fitting data")
 
@@ -70,36 +94,19 @@ if __name__ == "__main__":
     colors = np.zeros(shape=(clusterer.labels_.max(),3),dtype=np.float64)
     cmap_indices = np.array(range(clusterer.labels_.max()))
     np.random.shuffle(cmap_indices)
-    valid_labels = []
 
+    CLUSTER_COLORS = False
     for label in range(clusterer.labels_.max()):
         color = np.array(cmap(cmap_indices[label]/clusterer.labels_.max())[0:3])
         label_indices = (labels == label)
         print(f"There are {sum(label_indices)} pts with label {label}")
-        numpy_data['sh0'][label_indices,0,:] = color / sh_C0
 
-        # We want to filter out the ground to isolate our object. 
-        # To do this, we look at clusters with more horizontal std dev than vertical
-        x_vals = numpy_data['means'][label_indices,0]
-        y_vals = numpy_data['means'][label_indices,1]
-        z_vals = numpy_data['means'][label_indices,2]
-        x_std = np.std(x_vals)
-        y_std = np.std(y_vals)
-        z_std = np.std(z_vals)
-
-        THRESHOLD_FACTOR = 5
-        if not(z_std * THRESHOLD_FACTOR < x_std and z_std * THRESHOLD_FACTOR < y_std):
-            valid_labels.append(label)
-
-
+        if CLUSTER_COLORS:
+            numpy_data['sh0'][label_indices,0,:] = color / sh_C0
+    
     # Mask out points that don't get matched
     label_indices = (labels == -1)
     print(f"There are {sum(label_indices)} pts without a cluster (outliers)")
-
-    bad_labels = [i for i in range(clusterer.labels_.max()) if i not in valid_labels]
-    for bad_label in bad_labels:
-        label_indices = label_indices | (labels == bad_label)
-
     numpy_data['sh0'][label_indices,0,:] = 0.0
 
     #print(f"Colors: {colors}")
@@ -111,7 +118,7 @@ if __name__ == "__main__":
 
     #color_red = np.array([1.0,0.0,0.0])/sh_C0
     #numpy_data['sh0'][:,0,:] = color_red
-    #numpy_data['shN'][:,:,:] = 0.0
+    numpy_data['shN'][:,:,:] = 0.0
 
     print(f"Opacity Modified: {opacity_modified.numpy()}")
 
@@ -119,4 +126,19 @@ if __name__ == "__main__":
     checkpoint_data['splats']['sh0'] = torch.from_numpy(numpy_data['sh0'])
     checkpoint_data['splats']['shN'] = torch.from_numpy(numpy_data['shN'])
 
-    torch.save(checkpoint_data,'modified_pt.pt')
+    torch.save(checkpoint_data,dst)
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        # no parameters passed
+        src = "./results/splatted_new/ckpts/ckpt_6999_rank0.pt"
+        dst = "./modified_gaussians.pt"
+    elif len(sys.argv) < 3:
+        # source passed
+        src = sys.argv[1]
+        dst = "./modified_gaussians.pt"
+    else:
+        # both source and destination passed
+        src = sys.argv[1]
+        dst = sys.argv[2]
+    main(src=src,dst=dst)
