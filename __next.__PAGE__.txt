@@ -1,5 +1,5 @@
 1:"$Sreact.fragment"
 2:I[97367,["/gaussian-guy/_next/static/chunks/ff1a16fafef87110.js","/gaussian-guy/_next/static/chunks/7340adf74ff47ec0.js"],"OutletBoundary"]
 3:"$Sreact.suspense"
-0:{"buildId":"LzztQobHyzSb0nDku2Qw5","rsc":["$","$1","c",{"children":[["$","section",null,{"className":"hero","children":[["$","h1",null,{"children":"Gaussian Guy"}],["$","p",null,{"children":"A project that uses a robot and and guassian splat to scan an object"}]]}],null,["$","$L2",null,{"children":["$","$3",null,{"name":"Next.MetadataOutlet","children":"$@4"}]}]]}],"loading":null,"isPartial":false}
+0:{"buildId":"JDl6XAw8L9XMz3gyiZZWZ","rsc":["$","$1","c",{"children":[["$","section",null,{"className":"hero","children":[["$","h1",null,{"children":"Gaussian Guy"}],["$","p",null,{"children":"A project that uses a robot and and guassian splat to scan an object"}]]}],null,["$","$L2",null,{"children":["$","$3",null,{"name":"Next.MetadataOutlet","children":"$@4"}]}]]}],"loading":null,"isPartial":false}
 4:null
