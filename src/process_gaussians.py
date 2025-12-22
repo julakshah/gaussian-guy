@@ -10,14 +10,45 @@ import hdbscan
 from matplotlib import colormaps
 
 def logit(x, eps=1e-6):
+    """
+    Inverse of signmoid function
+    We manually need to pass opacity through a sigmoid to adjust it as we would expect,
+    so this makes undoing that activation function easier
+    
+    Args:
+        x (pytorch Tensor): Pytorch Tensor to pass through the function
+        eps (float): epsilon to avoid div by zero
+    """
     # clamp to avoid infs at 0 or 1
     x = x.clamp(eps, 1 - eps)
     return torch.log(x / (1 - x))
 
+<<<<<<< Updated upstream:src/process_gaussians.py
 if __name__ == "__main__":
     #src = "../../gsplat/examples/results/personhall_downsample/ckpts/ckpt_29999_rank0.pt"
     src = "./results/estop_2/ckpts/ckpt_6999_rank0.pt"
     dst = "./modified_gaussians.pt"
+=======
+def main(src: str="./results/splatted_new/ckpts/ckpt_6999_rank0.pt",
+    dst: str="./modified_gaussians.pt"):
+    """
+    Main function to load gaussians, mask out outliers and try to isolate the scanned object
+    The result is another .pt file that can be viewed with gsplat's simple_viewer
+
+    Works as follows:
+        Loads data from source
+        Clusters data using HDBSCAN according to means and colors
+        Sets opacity of outlier points to zero
+        Identifies clusters with x and y standard deviations as 
+            greater than THRESHOLD_FACTOR the z std dev as part of the table,
+            and masks those out as well
+        Saves the resulting splats to a destination file.
+
+    Args:
+        src (str): Source directory to load gaussians from
+        dst (str): Destination directory to save gaussians into after modifying them
+    """
+>>>>>>> Stashed changes:components/process_gaussians.py
 
     checkpoint_data = torch.load(src, map_location='cpu')
     print(f"checkpt data: {checkpoint_data}")
@@ -98,4 +129,19 @@ if __name__ == "__main__":
     checkpoint_data['splats']['sh0'] = torch.from_numpy(numpy_data['sh0'])
     checkpoint_data['splats']['shN'] = torch.from_numpy(numpy_data['shN'])
 
-    torch.save(checkpoint_data,'modified_pt.pt')
+    torch.save(checkpoint_data,dst)
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        # no parameters passed
+        src = "./results/splatted_new/ckpts/ckpt_6999_rank0.pt"
+        dst = "./modified_gaussians.pt"
+    elif len(sys.argv) < 3:
+        # source passed
+        src = sys.argv[1]
+        dst = "./modified_gaussians.pt"
+    else:
+        # both source and destination passed
+        src = sys.argv[1]
+        dst = sys.argv[2]
+    main(src=src,dst=dst)
