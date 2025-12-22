@@ -94,11 +94,15 @@ def main(src: str="./results/splatted_new/ckpts/ckpt_6999_rank0.pt",
     colors = np.zeros(shape=(clusterer.labels_.max(),3),dtype=np.float64)
     cmap_indices = np.array(range(clusterer.labels_.max()))
     np.random.shuffle(cmap_indices)
+
+    CLUSTER_COLORS = False
     for label in range(clusterer.labels_.max()):
         color = np.array(cmap(cmap_indices[label]/clusterer.labels_.max())[0:3])
         label_indices = (labels == label)
         print(f"There are {sum(label_indices)} pts with label {label}")
-        numpy_data['sh0'][label_indices,0,:] = color / sh_C0
+
+        if CLUSTER_COLORS:
+            numpy_data['sh0'][label_indices,0,:] = color / sh_C0
     
     # Mask out points that don't get matched
     label_indices = (labels == -1)
