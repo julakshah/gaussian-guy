@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 from octree import OctreeNode
 import random
 
-#### LLM
 SAFETY_MARGIN = 0.02
 
 # Functions
@@ -34,7 +33,7 @@ def reconstruct_path(node_path, current_node):
         path.append(current_node)
     return path[::-1]
 
-def is_safe_node(node: OctreeNode, root: OctreeNode, safety_margin: float = SAFETY_MARGIN) -> bool: ####LLM
+def is_safe_node(node: OctreeNode, root: OctreeNode, safety_margin: float = SAFETY_MARGIN) -> bool:
     """
     Check if a node is safe to traverse (not occupied and maintains safety margin).
     A node is unsafe if it's occupied OR if an occupied cell is within safety_margin.
@@ -43,7 +42,6 @@ def is_safe_node(node: OctreeNode, root: OctreeNode, safety_margin: float = SAFE
         return False
     
     # Check all neighbors within safety margin
-    # We need to check a sphere of radius safety_margin around the node
     neighbors = node.get_neighbors(root)
     for neighbor in neighbors:
         if neighbor.status == 'occupied':
