@@ -72,7 +72,7 @@ def main():
         cx=320.5050574967,
         cy=230.11271642
     )
-    octree = OctreeNode(position=(0.3, 0, 0.15), r=0.15, min_r=0.01)
+    octree = OctreeNode(position=(0.3, 0, 0.15), radius=0.15, min_r=0.01)
     unknowns_remain = True
 
     # Plotting
@@ -133,7 +133,7 @@ def main():
 
 
             point_cloud = open3d.geometry.PointCloud.create_from_rgbd_image(
-                rgbd, intrinsics)  # does extrinsics send it to world frame?
+                rgbd, intrinsics)
             camera_pose = pose_to_transform(pos)
             point_cloud.transform(camera_pose)
             down_point_cloud = point_cloud.voxel_down_sample(voxel_size=0.005)
@@ -240,7 +240,7 @@ def main():
 
     octree.draw(ax)
 
-    limit = octree.r * 1.1
+    limit = octree.radius * 1.1
     ax.set_xlim(-limit + 0.275, limit + 0.275)
     ax.set_ylim(-limit, limit)
     ax.set_zlim(-limit, limit)

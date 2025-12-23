@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from octree import OctreeNode
 import random
 
-SAFETY_MARGIN = 0.02
+SAFETY_MARGIN = 0.02 # technically unitless, ostensibly meters
 
 # Functions
 def calculate_h(position, dest):
