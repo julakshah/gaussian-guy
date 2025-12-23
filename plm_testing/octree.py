@@ -1,4 +1,4 @@
-"""Mess around with math and code to figure out Octrees"""
+"""Implement a custom Octree class for use in Gaussian Guy CompRobo final"""
 import random
 
 import matplotlib.pyplot as plt
