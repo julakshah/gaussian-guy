@@ -35,11 +35,11 @@ VIZ_FIGURE_SIZE = (10, 8)
 ALPHA_FRONTIER = 0.8            # Opacity of frontier markers
 ALPHA_OBSTACLE = 0.1            # Opacity of true obstacles (ghost)
 
-def visualize(ax, robot_map, robot_pos, path, frontiers, true_obstacles, title_text):
+def visualize(ax, octree, robot_pos, path, frontiers, true_obstacles, title_text):
     """Helper to keep the main loop clean."""
     if not VISUALIZATION: return
     ax.clear()
-    robot_map.draw(ax)
+    octree.draw(ax)
     
     # Draw Path
     if path:
@@ -112,14 +112,34 @@ def simulate_sensor(robot_pos, true_obstacles, octree_root, sensor_range=SENSOR_
     2. Clears space (marks empty) along the line of sight with raycast (simplified as a radius clear).
 
     Limitations:
-    - Senses everyting within range (even if behind obstacle)
-    - 
+    - Senses everyting within range (even if behind obstacle, which is different from true camera sensor)
+    - Projects as sphere, so the edge of detection is different then the effectively adaptive camera "edge"
     
     returns: True if the map changed, False otherwise.
     """
     map_changed = False
+    rand_sphere_surf_points = []
+
+    # Set all nodes in scan sphere to be empty
     
-    # Detect Obstacles
+    # rand_sphere_surf_points = Generate random "end" positions at sphere surface:
+    for i in range(200):
+        theta = random.random() * 2 * np.pi
+        phi = random.random() * 2 * np.pi
+        rho = sensor_range
+        x = rho * np.sin(phi) * np.cos(theta)
+        y = rho * np.sin(phi) * np.sin(theta)
+        z = np.cos(phi)
+        act_x = robot_pos[0] + x
+        act_y = robot_pos[0] + y
+        act_z = robot_pos[0] + z
+        rand_sphere_surf_points[i] = (act_x, act_y, act_z)
+    # scan_sphere_sampled = raycast to those end positions (rand_sphere_surf_points)
+    for point in rand_sphere_surf_points:
+        octree_root.raycast(origin=robot_pos, target=point)
+    
+    
+    # Detect Obstacles (overwrite previous empty assumption)
     for obs in true_obstacles:
         dist = np.sqrt((obs[0]-robot_pos[0])**2 + (obs[1]-robot_pos[1])**2 + (obs[2]-robot_pos[2])**2)
         
@@ -133,7 +153,7 @@ def simulate_sensor(robot_pos, true_obstacles, octree_root, sensor_range=SENSOR_
                 update_cell_with_max_size(octree_root, obs, is_occupied=True, max_leaf_size=1.0)
                 map_changed = True
 
-            octree_root.raycast(origin=robot_pos, target=obs)
+            octree_root.raycast(origin=robot_pos, target=obs) # does this take care of what the scan_sphere empty thing? I think this misses the nodes that don't lead to an occupied node
 
     # Affirm not occupied
     current_node = octree_root.find_leaf(obs)
@@ -141,11 +161,25 @@ def simulate_sensor(robot_pos, true_obstacles, octree_root, sensor_range=SENSOR_
         update_cell_with_max_size(octree_root, robot_pos, is_occupied=False, max_leaf_size=1.0)
         # map_changed = True
 
-    # Clear Empty Space
+    # Clear Empty Space ###?
     return map_changed
 
 def autonomous_exploration(start_pos, true_obstacles):
-    robot_map = OctreeNode(position=(0,0,0), radius=WORLD_BOUNDS) 
+    """
+    Order of exploration:
+    1. Circle
+    - Move to circle point
+    - Update with sensor
+    - repeat until circle completed
+    2. Adaptive path planning
+    - Move to nearest unknown update position
+    - Scan
+    - repeat until circle completed
+    3. Ending procedure [messaging]
+    """
+
+    ## Setup
+    spatial_map = OctreeNode(position=(0,0,0), radius=WORLD_BOUNDS) 
     current_pos = start_pos
     
     # Setup Visualization
@@ -157,13 +191,13 @@ def autonomous_exploration(start_pos, true_obstacles):
     
     ## Circle time
     # Generate Circle Waypoints
-    circle_steps = 40
+    circle_steps = 10
     angles = np.linspace(0, 2*np.pi, circle_steps)
     circle_path = []
     for theta in angles:
         x = INIT_RADIUS * np.cos(theta)
         y = INIT_RADIUS * np.sin(theta)
-        z = 0 
+        z = 0.03
         circle_path.append((x, y, z))
     
     circle_start_target = circle_path[0]
@@ -171,23 +205,24 @@ def autonomous_exploration(start_pos, true_obstacles):
     print("Circle time")
     
     # Plan path to the first point of the circle
-    transit_path = find_path(robot_map, current_pos, circle_start_target)
+    transit_path = find_path(spatial_map, current_pos, circle_start_target)
     
     if transit_path:
-        for node in transit_path:
-            current_pos = node.position
-            simulate_sensor(current_pos, true_obstacles, robot_map)
-            visualize(ax, robot_map, current_pos, transit_path, [], true_obstacles, "Phase 0: Transit to Circle")
+        for goal_node in transit_path:
+            current_pos = goal_node.position
+            simulate_sensor(current_pos, true_obstacles, spatial_map)
+            visualize(ax, spatial_map, current_pos, transit_path, [], true_obstacles, "Phase 0: Transit to Circle")
     else:
-        print("Could not path to circle start! Teleporting...")
+        print("Teleport")
         current_pos = circle_start_target
 
     print("Phase 1: Performing Circular Scan...")
     
+    # Circle itself
     for i, pos in enumerate(circle_path):
         current_pos = pos
-        simulate_sensor(current_pos, true_obstacles, robot_map)
-        visualize(ax, robot_map, current_pos, circle_path[i:], [], true_obstacles, "Phase 1: Circular Scan")
+        simulate_sensor(current_pos, true_obstacles, spatial_map)
+        visualize(ax, spatial_map, current_pos, circle_path[i:], [], true_obstacles, "Phase 1: Circular Scan")
 
     ## Adaptive pathing
     iteration = 0
@@ -200,7 +235,7 @@ def autonomous_exploration(start_pos, true_obstacles):
 
         # 1. Find Frontiers
         frontiers = []
-        find_unknown_leaves(robot_map, frontiers) #
+        find_unknown_leaves(spatial_map, frontiers) #
         
         if not frontiers:
             print(f"\n[Iter {iteration}] Exploration Complete: No unknown leaves left.")
@@ -214,11 +249,11 @@ def autonomous_exploration(start_pos, true_obstacles):
         print(f"\r[Iter {iteration}] Pos: {current_pos} | Goal: {goal_pos} | Unk Leaves: {len(frontiers)}", end="")
 
         # 3. Plan Path
-        path = find_path(robot_map, current_pos, goal_pos) #
+        path = find_path(spatial_map, current_pos, goal_pos) #
 
         if not path:
             print("\n  -> Goal Unreachable. Marking occupied.")
-            robot_map.update_cell(goal_pos, is_occupied=True)
+            spatial_map.update_cell(goal_pos, is_occupied=True)
             continue
         
         # 4. Execute Path
@@ -227,14 +262,14 @@ def autonomous_exploration(start_pos, true_obstacles):
 
             if i < len(path) - 1:
                 next_node = path[i + 1]
-                if not is_safe_node(next_node, robot_map):
+                if not is_safe_node(next_node, spatial_map):
                     print("\n  -> Path blocked ahead! Replanning...")
                     break
 
             # Simulate Sensor
-            changed = simulate_sensor(current_pos, true_obstacles, robot_map)
+            changed = simulate_sensor(current_pos, true_obstacles, spatial_map)
             
-            visualize(ax, robot_map, current_pos, path[i:], frontiers, true_obstacles, f"Phase 2: Adaptive | Iter {iteration}")
+            visualize(ax, spatial_map, current_pos, path[i:], frontiers, true_obstacles, f"Phase 2: Adaptive | Iter {iteration}")
 
             if changed:
                 print("\n  -> Map Changed! Replanning...")

@@ -273,7 +273,7 @@ class OctreeNode:
     
     def raycast(self, origin, target):
         """Uses a step-based traversal to mark all voxels along the vector from 
-        origin to target as 'empty'.
+        origin to target as 'empty'. ### Consider changing to pass in what to raycast the thing is, or simply return a list of the nodes vs assuming empty?
 
         Args:
             origin: The (x, y, z) starting point of the ray (e.g., camera position).

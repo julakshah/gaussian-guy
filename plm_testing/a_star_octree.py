@@ -24,7 +24,7 @@ def calculate_h(position, dest):
     h = np.sqrt((position[0] - dest[0])**2 + (position[1] - dest[1])**2 + (position[2] - dest[2])**2)
     return float(h)
 
-def reconstruct_path(node_path, current_node):
+def reconstruct_path(node_path, current_node): # Consider changing only the region around the new information? do I already do that?
     """
     Reconstruct the path from goal to start.
     """
